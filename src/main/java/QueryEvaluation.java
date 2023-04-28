@@ -1,4 +1,6 @@
 import exception.PathToPythonNotFoundException;
+import load.EdgesLoader;
+import operator.rollUpOp;
 import org.w3c.dom.Document;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -81,21 +83,21 @@ public class QueryEvaluation {
 			  /* using class call
 			  String[] cmdArgs = {rootNode, childNode, parameter[0]};
 			  try {
-				  aggregateOp.main(cmdArgs);
+				  operator.aggregateOp.main(cmdArgs);
 			  }
 			  catch (Exception e) {
-				  System.out.println("aggregateOp failed for rootNode: "+rootNode+" and childNode: "+childNode+" and function: "+parameter[0]);
+				  System.out.println("operator.aggregateOp failed for rootNode: "+rootNode+" and childNode: "+childNode+" and function: "+parameter[0]);
 				  System.exit(5);
 			  }
 			  */
 
                 // using runtime
                 try {
-                    Process p = Runtime.getRuntime().exec("java aggregateOp " + rootNode + " " + childNode + " " + parameter[0]);
+                    Process p = Runtime.getRuntime().exec("java operator.aggregateOp " + rootNode + " " + childNode + " " + parameter[0]);
                     p.waitFor();
                     int returnValue = p.exitValue();
                     if (returnValue != 0) {
-                        System.out.println("aggregateOp failed for rootNode: " + rootNode + " and childNode: " + childNode + " and function: " + parameter[0] + " with error code: " + returnValue);
+                        System.out.println("operator.aggregateOp failed for rootNode: " + rootNode + " and childNode: " + childNode + " and function: " + parameter[0] + " with error code: " + returnValue);
                         System.exit(5);
                     }
 
@@ -130,11 +132,11 @@ public class QueryEvaluation {
 
                 if (hostPL.equals("java")) { // does not work
                     try {
-                        Process p = Runtime.getRuntime().exec("java mapOp " + rootNode + " " + childNode + " " + functionName);
+                        Process p = Runtime.getRuntime().exec("java operator.mapOp " + rootNode + " " + childNode + " " + functionName);
                         p.waitFor();
                         int returnValue = p.exitValue();
                         if (returnValue != 0) {
-                            System.out.println("mapOp failed for rootNode: " + rootNode + " and childNode: " + childNode + " and function: " + functionName + " with error code: " + returnValue);
+                            System.out.println("operator.mapOp failed for rootNode: " + rootNode + " and childNode: " + childNode + " and function: " + functionName + " with error code: " + returnValue);
                             System.exit(5);
                         }
                     } catch (InterruptedException e) {
@@ -144,12 +146,12 @@ public class QueryEvaluation {
 
                 if (hostPL.equals("python")) {
                     try {
-                        //System.out.println("python mapOp.py "+rootNode+" "+childNode+" \""+importPackage+"\" \""+functionName+"\"");
-                        Process p = Runtime.getRuntime().exec(path2Python + "python mapOp.py " + rootNode + " " + childNode + " \"" + importPackage + "\" \"" + functionName + "\"");
+                        //System.out.println("python operator.mapOp.py "+rootNode+" "+childNode+" \""+importPackage+"\" \""+functionName+"\"");
+                        Process p = Runtime.getRuntime().exec(path2Python + "python operator.mapOp.py " + rootNode + " " + childNode + " \"" + importPackage + "\" \"" + functionName + "\"");
                         p.waitFor();
                         int returnValue = p.exitValue();
                         if (returnValue != 0) {
-                            System.out.println("mapOp failed for rootNode: " + rootNode + " and childNode: " + childNode + " and host language: " + parameter[0] + " and import package: " + parameter[1] + " and function: " + parameter[2] + " with error code: " + returnValue);
+                            System.out.println("operator.mapOp failed for rootNode: " + rootNode + " and childNode: " + childNode + " and host language: " + parameter[0] + " and import package: " + parameter[1] + " and function: " + parameter[2] + " with error code: " + returnValue);
                             System.exit(5);
                         }
                     } catch (InterruptedException e) {
@@ -158,7 +160,7 @@ public class QueryEvaluation {
                 }
 
                 if (hostPL.equals("R")) {
-                    // mapOp operator implemented in R should be invoked here
+                    // operator.mapOp operator implemented in R should be invoked here
                 }
 
             } // of mapping
@@ -174,7 +176,7 @@ public class QueryEvaluation {
         System.out.print("  **  Operator: thetaCombine on:" + rootNode + "(" + allChildNodes + ") - Elapsed time:"); // debug
         try {
 
-            ProcessBuilder pb = new ProcessBuilder(path2Python + "python", "thetaCombineOp.py", "" + rootNode, "" + childNode, "\"" + allChildNodes + "\"", "\"" + outputChildNodes + "\"", "\"" + theta + "\"", "\"" + keysMode + "\"");
+            ProcessBuilder pb = new ProcessBuilder(path2Python + "python", "operator.thetaCombineOp.py", "" + rootNode, "" + childNode, "\"" + allChildNodes + "\"", "\"" + outputChildNodes + "\"", "\"" + theta + "\"", "\"" + keysMode + "\"");
             Process p = pb.start();
             // the code bellow is used for debugging python
             // BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -184,11 +186,11 @@ public class QueryEvaluation {
             // }
             int returnValue = p.waitFor();
             if (returnValue != 0) {
-                System.out.println("thetaCombineOp failed for rootNode: " + rootNode + ", childNode: " + childNode + " and children: " + allChildNodes + " with error code: " + returnValue);
+                System.out.println("operator.thetaCombineOp failed for rootNode: " + rootNode + ", childNode: " + childNode + " and children: " + allChildNodes + " with error code: " + returnValue);
                 System.exit(5);
             }
 
-            //Process p = Runtime.getRuntime().exec("python c:\\datamingler\\implementation\\thetaCombineOp.py "+rootNode+" "+childNode+" \""+allChildNodes+"\" \""+outputChildNodes+"\" \""+theta+"\" \""+keysMode+"\"");
+            //Process p = Runtime.getRuntime().exec("python c:\\datamingler\\implementation\\operator.thetaCombineOp.py "+rootNode+" "+childNode+" \""+allChildNodes+"\" \""+outputChildNodes+"\" \""+theta+"\" \""+keysMode+"\"");
 
 		/* debugging - what python returns
  		BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -209,7 +211,7 @@ public class QueryEvaluation {
             //p.waitFor();
             //int returnValue = p.exitValue();
             //if (returnValue!=0) {
-            //	System.out.println("thetaCombineOp failed for rootNode: "+rootNode+", childNode: "+childNode+" and children: "+allChildNodes+" with error code: "+returnValue);
+            //	System.out.println("operator.thetaCombineOp failed for rootNode: "+rootNode+", childNode: "+childNode+" and children: "+allChildNodes+" with error code: "+returnValue);
             //	System.exit(5);
             //}
 
@@ -236,18 +238,18 @@ public class QueryEvaluation {
         try {
             rollUpOp.main(cmdArgs);
         } catch (Exception e) {
-            System.out.println("rollUpOp failed for rootNode: " + rootNode + ", childNode: " + childNode + " and childChildNode: " + childChildNode);
+            System.out.println("operator.rollUpOp failed for rootNode: " + rootNode + ", childNode: " + childNode + " and childChildNode: " + childChildNode);
             System.exit(5);
         }
 
 
 	/*
 	try {
-		Process p = Runtime.getRuntime().exec("java rollUpOp "+rootNode+" "+childNode+" "+childChildNode);
+		Process p = Runtime.getRuntime().exec("java operator.rollUpOp "+rootNode+" "+childNode+" "+childChildNode);
 		p.waitFor();
 	    int returnValue = p.exitValue();
 	    if (returnValue!=0) {
-			System.out.println("rollUpOp failed for rootNode: "+rootNode+", childNode: "+childNode+" and childChildNode: "+childChildNode+" with error code: "+returnValue);
+			System.out.println("operator.rollUpOp failed for rootNode: "+rootNode+", childNode: "+childNode+" and childChildNode: "+childChildNode+" with error code: "+returnValue);
 			System.exit(5);
 		}
 	}
@@ -273,7 +275,7 @@ public class QueryEvaluation {
             }
 
             // combine all edges having as root the childNode in one edge: childNode -> childChildNode
-            // This is done by applying the thetaCombineOp which includes the theta expression of childNode - if exists
+            // This is done by applying the operator.thetaCombineOp which includes the theta expression of childNode - if exists
             // this should be the edge that will be joined (rollUp) with rootNode->childNode edge
 
             String childChildNode = "childOf" + childNode;
@@ -449,7 +451,7 @@ public class QueryEvaluation {
         String[] cmdArgs = new String[arguments.size()];
         arguments.toArray(cmdArgs);
         try {
-            loadEdges.main(cmdArgs);
+            EdgesLoader.main(cmdArgs);
         } catch (Exception e) {
             System.out.println("loadEdges failed for query with rootNode: " + rootNode);
             System.exit(4);

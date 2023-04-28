@@ -1,4 +1,4 @@
-// This program is the same to loadEdgeNeo4j but loads multiple edges
+package load;// This program is the same to loadEdgeNeo4j but loads multiple edges
 // These are passed to command line string in the form: nodenameA_1, nodenameB_1, aliasA_1, aliasB_1,...
 // So command line args must be divided by four
 
@@ -30,7 +30,7 @@ import java.util.List;
 // 4: database vendor not supported
 // 5: generic database/SQL execution error
 
-public class loadEdges {
+public class EdgesLoader {
   public static void main(String[] args) throws ParserConfigurationException,
       XPathExpressionException, org.xml.sax.SAXException, IOException {
 
