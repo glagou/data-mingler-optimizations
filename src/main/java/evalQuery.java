@@ -353,21 +353,6 @@ public class evalQuery {
                 arguments.add(rootNode);
                 arguments.add(childNode);
 
-			  /* runtime version
-		      try {
-				  Process p = Runtime.getRuntime().exec("java loadEdgeNeo4j "+rootNodeDVM+" "+childNodeDVM+" "+rootNode+" "+childNode);
-				  p.waitFor();
-	      	      int returnValue = p.exitValue();
-	      	      if (returnValue!=0) {
-					  System.out.println("loadEdgeNeo4j failed for rootNode: "+rootNode+"("+rootNodeDVM+") and childNode: "+childNode+"("+childNodeDVM+") with error code: "+returnValue);
-					  System.exit(2);
-				  }
-		  	  }
-		  	  catch (InterruptedException e) {
-				  e.printStackTrace();
-		  	  }
-		  	  */
-
             } else {
                 System.out.println("    Edge is already materialized in system");
             }
