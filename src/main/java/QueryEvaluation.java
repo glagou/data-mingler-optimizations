@@ -1,6 +1,5 @@
+import exception.PathToPythonNotFoundException;
 import org.w3c.dom.Document;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.Pipeline;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -32,29 +31,32 @@ import java.util.*;
  * 4: loading of edges has failed
  * 5: execution of an operator has failed
  */
-public class evalQuery {
+// TODO: parallel evals
+// TODO: deallocate Redis space (remove KL structures) as soon as possible
+// TODO: each edge consists of keys in the form "root-child:key" - could be a tremendous waste of memory space;
+//  maybe each edge can get an id (int)
+public class QueryEvaluation {
 
-    // TODO: parallel evals
-    // TODO: deallocate Redis space (remove KL structures) as soon as possible
-    // TODO: each edge consists of keys in the form "root-child:key" - could be a tremendous waste of memory space;
-    //  maybe each edge can get an id (int)
+    private static final String PATH_ENV_VAR = "PATH";
+    private static final String PYTHON_EXECUTABLE = "python";
 
-    // This function gets a rootNode and a subset of its children and returns the *union* of the keys of all the involved edges rootNode --> childNode
-    // The code below could be quite inefficient, union should be done in Redis but sunion did not work
+    // TODO: Rename these after we know what they do
+    private static final Map<String, List<String>> childrenLists = new HashMap<>(); // the children's list of each node in the query (global)
+    private static final Map<String, String> onNodes = new HashMap<>(); // the actual node in the DVM that a label corresponds to (e.g. X --> custID)
+    private static final Map<String, String> transformations = new HashMap<>(); // the transformations' sequence of each node in the query
+    private static final Map<String, String> thetas = new HashMap<>(); // the theta expression that has to be expressed on internal nodes in the query
+    private static final Map<String, String> outputs = new HashMap<>(); // "yes" or "no" - should the computed edge participate in the output or will it be used just in the theta?
+    private static final List<String> arguments = new ArrayList<>(); // list containing the args required for loadEdges command line arguments
 
-    static Jedis jedis = new Jedis("127.0.0.1", 6379);
-    static Jedis jedis2 = new Jedis("127.0.0.1", 6379);
-    static Pipeline jPipeline = jedis2.pipelined();
-
-    static Map<String, List<String>> childrenLists = new HashMap<String, List<String>>(); // the children's list of each node in the query (global)
-    static Map<String, String> onNodes = new HashMap<String, String>(); // the actual node in the DVM that a label corresponds to (e.g. X --> custID)
-    static Map<String, String> transformations = new HashMap<String, String>(); // the transformations' sequence of each node in the query
-    static Map<String, String> thetas = new HashMap<String, String>(); // the theta expression that has to be expressed on internal nodes in the query
-    static Map<String, String> outputs = new HashMap<String, String>(); // "yes" or "no" - should the computed edge participate in the output or will it be used just in the theta?
-
-    static List<String> arguments = new ArrayList<String>(); // list contaning the args required for loadEdges command line arguments
-    static String path2Python = "C:\\Users\\Damianos\\AppData\\Local\\Programs\\Python\\Python37\\";
-
+    private static String findPathToPython() {
+        String pathVariableFromEnv = System.getenv(PATH_ENV_VAR);
+        String[] values = pathVariableFromEnv.split(File.pathSeparator);
+        return Arrays
+                .stream(values)
+                .filter(value -> new File(value, PYTHON_EXECUTABLE).exists())
+                .findFirst()
+                .orElseThrow(PathToPythonNotFoundException::new);
+    }
 
     //************** This functions deletes the rootNode -> childNode edge from Redis
     public static void removeEdge(String rootNode, String childNode) {
@@ -370,7 +372,7 @@ public class evalQuery {
 
     public static void main(String[] args) throws ParserConfigurationException,
             XPathExpressionException, org.xml.sax.SAXException, IOException {
-
+        String pathToPython = findPathToPython();
         // command arguments should contain:
         // queryFilename - string
         // outputType - string (="excel"/"none") - output always goes to a csv file named $rootNode+$timestamp ("none"). If outputType is set to "excel" it invokes excel to present it
