@@ -1,16 +1,3 @@
-// evals a query Q defined over a DVM
-// Q is a tree rooted on node R, described in queryFilename xml file
-// Transformations currently supported: aggregate, filter, map
-// One can have a sequence of transformations in a semi-column separated list
-// Examples:
-//   map:python,package,func_name;
-//   filter:a boolean python expression involving the childname precedeed by a $;
-//   aggregate:avg/min/max/sum/count
-
-// TO DO: parallel evals
-// TO DO: deallocate Redis space (remove KL structures) as soon as possible
-// TO DO: each edge consists of keys in the form "root-child:key" - could be a tremendous waste of memory space; maybe each edge can get an id (int)
-
 import org.neo4j.driver.v1.*;
 import org.w3c.dom.Document;
 import redis.clients.jedis.Jedis;
@@ -29,14 +16,29 @@ import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-// Exit error codes:
-// 1: wrong number of args
-// 2: second argument should be 'excel' or 'none'
-// 3: third argument should be "all" or "intersect"
-// 4: load edges failed
-// 5: some operator failed
-
+/**
+ * Evaluates a query (Q) defined over a DVM (Data Virtual Machine).
+ * <br>
+ * The query (Q) is a tree having as a root the node R, described in the corresponding query XML file that has been
+ * previously generated.
+ * <br>
+ * The transformations currently supported are: aggregate, filter, and map.
+ * One can have a sequence of transformations in a ":" seperated list:
+ * e.g. aggregate:avg
+ * <br>
+ * The error codes that the program currently exits with indicate the following:
+ * 1: wrong number of arguments given
+ * 2: second argument is not 'excel' or 'none'
+ * 3: third argument is not 'all' or 'intersect'
+ * 4: loading of edges has failed
+ * 5: execution of an operator has failed
+ */
 public class evalQuery {
+
+	// TODO: parallel evals
+	// TODO: deallocate Redis space (remove KL structures) as soon as possible
+	// TODO: each edge consists of keys in the form "root-child:key" - could be a tremendous waste of memory space;
+	//  maybe each edge can get an id (int)
 
   // This function gets a rootNode and a subset of its children and returns the *union* of the keys of all the involved edges rootNode --> childNode
   // The code below could be quite inefficient, union should be done in Redis but sunion did not work
