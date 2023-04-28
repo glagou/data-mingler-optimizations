@@ -58,35 +58,6 @@ public class QueryEvaluation {
                 .orElseThrow(PathToPythonNotFoundException::new);
     }
 
-    //************** This functions deletes the rootNode -> childNode edge from Redis
-    public static void removeEdge(String rootNode, String childNode) {
-        Set<String> keys = jedis.smembers(rootNode + "-" + childNode);
-        for (String key : keys)
-            jPipeline.del(rootNode + "-" + childNode + ":" + key);
-        jPipeline.del(rootNode + "-" + childNode);
-        jPipeline.sync();
-    }
-
-
-    //************** This functions selects keys of a rootNode based on its children
-    public static Set<String> combineKeys(String rootNode, List<String> childNodes, String keysMode) {
-        Set<String> keys = null;
-        boolean isFirst = true;
-        for (String childNode : childNodes) {
-            if (isFirst) {
-                keys = jedis.smembers(rootNode + "-" + childNode);
-                isFirst = false;
-                continue;
-            }
-            if (keysMode.equals("all"))
-                keys.addAll(jedis.smembers(rootNode + "-" + childNode));
-            else if (keysMode.equals("intersect"))
-                keys.retainAll(jedis.smembers(rootNode + "-" + childNode));
-        }
-        return keys;
-    } // of combineKeys
-
-
     //************** This function executes a transformation on an edge (aggregation, filtering, etc.) and MODIFIES the edge
     public static void execTransformations(String rootNode, String childNode) throws IOException {
         String transforms = "";
