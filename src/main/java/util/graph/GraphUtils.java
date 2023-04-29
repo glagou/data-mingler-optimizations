@@ -10,6 +10,7 @@ import java.util.Set;
 public class GraphUtils {
 
     private static final Map<String, Set<String>> GRAPH = GraphManagerSingleton.getGraph();
+
     private static final String HYPHEN = "-";
 
     private static String createGraphKey(String rootNode, String childNode) {
@@ -34,7 +35,7 @@ public class GraphUtils {
                 keys.retainAll(GRAPH.get(childNodeGraphKey));
             }
         });
-       return keys;
+        return keys;
     }
 
 }
