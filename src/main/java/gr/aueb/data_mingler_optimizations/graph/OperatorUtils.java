@@ -1,12 +1,12 @@
-package util.graph;
+package gr.aueb.data_mingler_optimizations.graph;
 
-import enums.Operator;
-import exception.OperatorExecutionFailedException;
-import exception.TransformationsAreInvalidException;
+import gr.aueb.data_mingler_optimizations.QueryEvaluation;
+import gr.aueb.data_mingler_optimizations.enums.Operator;
+import gr.aueb.data_mingler_optimizations.exception.OperatorExecutionFailedException;
+import gr.aueb.data_mingler_optimizations.exception.TransformationsAreInvalidException;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Map;
 
 public class OperatorUtils {
 
@@ -16,9 +16,9 @@ public class OperatorUtils {
     private static final String NULL = "null";
     private static final String EMPTY = "";
 
-    private static final String AGGREGATE_OPERATOR_COMMAND_TEMPLATE = "java operator.aggregateOp %s %s %s";
+    private static final String AGGREGATE_OPERATOR_COMMAND_TEMPLATE = "java gr.aueb.data_mingler_optimizations.operator.aggregateOp %s %s %s";
     private static final String FILTER_OPERATOR_COMMAND_TEMPLATE = "%s" + "python filterOp.py %s %s \"%s\"";
-    private static final String MAP_OPERATOR_COMMAND_TEMPLATE = "%s" + "python operator.mapOp.py %s %s \"%s\" \"%s\"";
+    private static final String MAP_OPERATOR_COMMAND_TEMPLATE = "%s" + "python gr.aueb.data_mingler_optimizations.operator.mapOp.py %s %s \"%s\" \"%s\"";
 
     private static void throwExceptionIfTransformationsAreInvalid(String[] transformationsToPerform) {
         if (transformationsToPerform[0].equals(NULL) || transformationsToPerform[0].equals(EMPTY)) {
@@ -75,9 +75,10 @@ public class OperatorUtils {
     }
 
     public static void executeTransformationOnEdge(String rootNode, String childNode,
-                                                   Map<String, String> transformations, String pythonPath,
-                                                   String importPackage, String functionName) {
-        String[] transformationsToPerform = transformations
+                                                   String pythonPath, String importPackage,
+                                                   String functionName) {
+        String[] transformationsToPerform = QueryEvaluation
+                .getTransformations()
                 .get(childNode)
                 .split(SEMI_COLON, -1);
         throwExceptionIfTransformationsAreInvalid(transformationsToPerform);

@@ -1,4 +1,4 @@
-package load;// This program is the same to loadEdgeNeo4j but loads multiple edges
+package gr.aueb.data_mingler_optimizations.load;// This program is the same to loadEdgeNeo4j but loads multiple edges
 // These are passed to command line string in the form: nodenameA_1, nodenameB_1, aliasA_1, aliasB_1,...
 // So command line args must be divided by four
 

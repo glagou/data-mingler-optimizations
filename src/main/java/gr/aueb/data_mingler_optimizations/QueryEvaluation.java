@@ -1,6 +1,8 @@
-import exception.PathToPythonNotFoundException;
-import load.EdgesLoader;
-import operator.rollUpOp;
+package gr.aueb.data_mingler_optimizations;
+
+import gr.aueb.data_mingler_optimizations.exception.PathToPythonNotFoundException;
+import gr.aueb.data_mingler_optimizations.load.EdgesLoader;
+import gr.aueb.data_mingler_optimizations.operator.rollUpOp;
 import org.w3c.dom.Document;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -42,7 +44,7 @@ public class QueryEvaluation {
     private static final String PATH_ENV_VAR = "PATH";
     private static final String PYTHON_EXECUTABLE = "python";
 
-    // TODO: Rename these after we know what they do
+    // TODO: Rename these and remove comments after we know what they do
     private static final Map<String, List<String>> childrenLists = new HashMap<>(); // the children's list of each node in the query (global)
     private static final Map<String, String> onNodes = new HashMap<>(); // the actual node in the DVM that a label corresponds to (e.g. X --> custID)
     private static final Map<String, String> transformations = new HashMap<>(); // the transformations' sequence of each node in the query
@@ -60,115 +62,6 @@ public class QueryEvaluation {
                 .orElseThrow(PathToPythonNotFoundException::new);
     }
 
-    //************** This function executes a transformation on an edge (aggregation, filtering, etc.) and MODIFIES the edge
-    public static void execTransformations(String rootNode, String childNode) throws IOException {
-        String transforms = "";
-        int numOfTransformations = 0;
-
-        transforms = transformations.get(childNode);
-        String[] transformation = transforms.split(";", -1);
-        if (!transforms.equals("null") && !transforms.trim().equals("")) {
-            numOfTransformations = transformation.length;
-        }
-        for (int i = 0; i < numOfTransformations; i++) {
-            String[] args = transformation[i].split(":", -1);
-            String nameOfOper = args[0];
-            String parameters = args[1];
-            System.out.println("  **  Operator:" + nameOfOper + ", params:" + parameters); // debug
-            String[] parameter = parameters.split(",", -1);
-
-            // aggregation - one parameter, the type of aggregation (min, max, average, count, sum, any)
-            if (nameOfOper.equals("aggregate")) {  // calling aggregation operator
-
-			  /* using class call
-			  String[] cmdArgs = {rootNode, childNode, parameter[0]};
-			  try {
-				  operator.aggregateOp.main(cmdArgs);
-			  }
-			  catch (Exception e) {
-				  System.out.println("operator.aggregateOp failed for rootNode: "+rootNode+" and childNode: "+childNode+" and function: "+parameter[0]);
-				  System.exit(5);
-			  }
-			  */
-
-                // using runtime
-                try {
-                    Process p = Runtime.getRuntime().exec("java operator.aggregateOp " + rootNode + " " + childNode + " " + parameter[0]);
-                    p.waitFor();
-                    int returnValue = p.exitValue();
-                    if (returnValue != 0) {
-                        System.out.println("operator.aggregateOp failed for rootNode: " + rootNode + " and childNode: " + childNode + " and function: " + parameter[0] + " with error code: " + returnValue);
-                        System.exit(5);
-                    }
-
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                //
-
-            } // of aggregation
-
-            // filtering
-            if (nameOfOper.equals("filter")) {  // calling filtering operator - written in python!
-                try {
-                    //System.out.println("python filterOp.py "+rootNode+" "+childNode+" \""+parameter[0]+"\"");
-                    Process p = Runtime.getRuntime().exec(path2Python + "python filterOp.py " + rootNode + " " + childNode + " \"" + parameter[0] + "\"");
-                    p.waitFor();
-                    int returnValue = p.exitValue();
-                    if (returnValue != 0) {
-                        System.out.println("filterOp failed for rootNode: " + rootNode + " and childNode: " + childNode + " and expression: " + parameter[0] + " with error code: " + returnValue);
-                        System.exit(5);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            } // of filtering
-
-            // mapping - two parameters, the language of the function and the name of the function
-            if (nameOfOper.equals("map")) {  // calling mapping operator
-                String hostPL = parameter[0];
-                String importPackage = parameter[1];
-                String functionName = parameter[2];
-
-                if (hostPL.equals("java")) { // does not work
-                    try {
-                        Process p = Runtime.getRuntime().exec("java operator.mapOp " + rootNode + " " + childNode + " " + functionName);
-                        p.waitFor();
-                        int returnValue = p.exitValue();
-                        if (returnValue != 0) {
-                            System.out.println("operator.mapOp failed for rootNode: " + rootNode + " and childNode: " + childNode + " and function: " + functionName + " with error code: " + returnValue);
-                            System.exit(5);
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                if (hostPL.equals("python")) {
-                    try {
-                        //System.out.println("python operator.mapOp.py "+rootNode+" "+childNode+" \""+importPackage+"\" \""+functionName+"\"");
-                        Process p = Runtime.getRuntime().exec(path2Python + "python operator.mapOp.py " + rootNode + " " + childNode + " \"" + importPackage + "\" \"" + functionName + "\"");
-                        p.waitFor();
-                        int returnValue = p.exitValue();
-                        if (returnValue != 0) {
-                            System.out.println("operator.mapOp failed for rootNode: " + rootNode + " and childNode: " + childNode + " and host language: " + parameter[0] + " and import package: " + parameter[1] + " and function: " + parameter[2] + " with error code: " + returnValue);
-                            System.exit(5);
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                if (hostPL.equals("R")) {
-                    // operator.mapOp operator implemented in R should be invoked here
-                }
-
-            } // of mapping
-
-        }
-    } // of execTransformations
-
-
     //************** This function gets a root and its children and combine them into one (new) edge rootNode --> childNode based on a selection expression theta
     public static void thetaCombine(String rootNode, String childNode, String allChildNodes, String outputChildNodes, String theta, String keysMode) throws IOException {
 
@@ -176,7 +69,7 @@ public class QueryEvaluation {
         System.out.print("  **  Operator: thetaCombine on:" + rootNode + "(" + allChildNodes + ") - Elapsed time:"); // debug
         try {
 
-            ProcessBuilder pb = new ProcessBuilder(path2Python + "python", "operator.thetaCombineOp.py", "" + rootNode, "" + childNode, "\"" + allChildNodes + "\"", "\"" + outputChildNodes + "\"", "\"" + theta + "\"", "\"" + keysMode + "\"");
+            ProcessBuilder pb = new ProcessBuilder(path2Python + "python", "gr.aueb.data_mingler_optimizations.operator.thetaCombineOp.py", "" + rootNode, "" + childNode, "\"" + allChildNodes + "\"", "\"" + outputChildNodes + "\"", "\"" + theta + "\"", "\"" + keysMode + "\"");
             Process p = pb.start();
             // the code bellow is used for debugging python
             // BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -186,11 +79,11 @@ public class QueryEvaluation {
             // }
             int returnValue = p.waitFor();
             if (returnValue != 0) {
-                System.out.println("operator.thetaCombineOp failed for rootNode: " + rootNode + ", childNode: " + childNode + " and children: " + allChildNodes + " with error code: " + returnValue);
+                System.out.println("gr.aueb.data_mingler_optimizations.operator.thetaCombineOp failed for rootNode: " + rootNode + ", childNode: " + childNode + " and children: " + allChildNodes + " with error code: " + returnValue);
                 System.exit(5);
             }
 
-            //Process p = Runtime.getRuntime().exec("python c:\\datamingler\\implementation\\operator.thetaCombineOp.py "+rootNode+" "+childNode+" \""+allChildNodes+"\" \""+outputChildNodes+"\" \""+theta+"\" \""+keysMode+"\"");
+            //Process p = Runtime.getRuntime().exec("python c:\\datamingler\\implementation\\gr.aueb.data_mingler_optimizations.operator.thetaCombineOp.py "+rootNode+" "+childNode+" \""+allChildNodes+"\" \""+outputChildNodes+"\" \""+theta+"\" \""+keysMode+"\"");
 
 		/* debugging - what python returns
  		BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -211,7 +104,7 @@ public class QueryEvaluation {
             //p.waitFor();
             //int returnValue = p.exitValue();
             //if (returnValue!=0) {
-            //	System.out.println("operator.thetaCombineOp failed for rootNode: "+rootNode+", childNode: "+childNode+" and children: "+allChildNodes+" with error code: "+returnValue);
+            //	System.out.println("gr.aueb.data_mingler_optimizations.operator.thetaCombineOp failed for rootNode: "+rootNode+", childNode: "+childNode+" and children: "+allChildNodes+" with error code: "+returnValue);
             //	System.exit(5);
             //}
 
@@ -238,18 +131,18 @@ public class QueryEvaluation {
         try {
             rollUpOp.main(cmdArgs);
         } catch (Exception e) {
-            System.out.println("operator.rollUpOp failed for rootNode: " + rootNode + ", childNode: " + childNode + " and childChildNode: " + childChildNode);
+            System.out.println("gr.aueb.data_mingler_optimizations.operator.rollUpOp failed for rootNode: " + rootNode + ", childNode: " + childNode + " and childChildNode: " + childChildNode);
             System.exit(5);
         }
 
 
 	/*
 	try {
-		Process p = Runtime.getRuntime().exec("java operator.rollUpOp "+rootNode+" "+childNode+" "+childChildNode);
+		Process p = Runtime.getRuntime().exec("java gr.aueb.data_mingler_optimizations.operator.rollUpOp "+rootNode+" "+childNode+" "+childChildNode);
 		p.waitFor();
 	    int returnValue = p.exitValue();
 	    if (returnValue!=0) {
-			System.out.println("operator.rollUpOp failed for rootNode: "+rootNode+", childNode: "+childNode+" and childChildNode: "+childChildNode+" with error code: "+returnValue);
+			System.out.println("gr.aueb.data_mingler_optimizations.operator.rollUpOp failed for rootNode: "+rootNode+", childNode: "+childNode+" and childChildNode: "+childChildNode+" with error code: "+returnValue);
 			System.exit(5);
 		}
 	}
@@ -275,7 +168,7 @@ public class QueryEvaluation {
             }
 
             // combine all edges having as root the childNode in one edge: childNode -> childChildNode
-            // This is done by applying the operator.thetaCombineOp which includes the theta expression of childNode - if exists
+            // This is done by applying the gr.aueb.data_mingler_optimizations.operator.thetaCombineOp which includes the theta expression of childNode - if exists
             // this should be the edge that will be joined (rollUp) with rootNode->childNode edge
 
             String childChildNode = "childOf" + childNode;
@@ -514,6 +407,10 @@ public class QueryEvaluation {
         System.out.println("Completed:" + estimatedTime);
 
     } // of main
+
+    public static Map<String, String> getTransformations() {
+        return transformations;
+    }
 } // of program
 
 

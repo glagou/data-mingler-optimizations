@@ -23,9 +23,9 @@ keysMode = sys.argv[6]
 # if there is no outputChildNodes, i.e. the tree represent only a theta condition (which happens very often)
 # then you construct the new edge (childNode) as follows: 
 # for each key that satisfies the condition, insert in key's list the key itself as the only value!
-# We do this is because right after the thetaCombine operator you are going to have a rollup operator
+# We do this is because right after the thetaCombine gr.aueb.data_mingler_optimizations.operator you are going to have a rollup gr.aueb.data_mingler_optimizations.operator
 # If the internal node represents just a theta expression, you want to replace the key of edge2 with itself, so the edge
-# that results from the rollup operator is edge1 with just fewer keys (i.e. applying the theta epression)
+# that results from the rollup gr.aueb.data_mingler_optimizations.operator is edge1 with just fewer keys (i.e. applying the theta epression)
     
 if (outputChildNodesCL == ""):
     hasOutput=False

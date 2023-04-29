@@ -1,7 +1,6 @@
-package util.graph;
+package gr.aueb.data_mingler_optimizations.graph;
 
-import enums.KeyMode;
-import manager.graph.GraphManagerSingleton;
+import gr.aueb.data_mingler_optimizations.enums.KeyMode;
 
 import java.util.List;
 import java.util.Map;

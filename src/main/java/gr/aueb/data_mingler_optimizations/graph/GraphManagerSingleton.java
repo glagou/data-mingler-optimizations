@@ -1,7 +1,6 @@
-package manager.graph;
+package gr.aueb.data_mingler_optimizations.graph;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 

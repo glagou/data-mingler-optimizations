@@ -1,4 +1,4 @@
-package exception;
+package gr.aueb.data_mingler_optimizations.exception;
 
 public class PathToPythonNotFoundException extends RuntimeException {
 

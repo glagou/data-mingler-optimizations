@@ -1,4 +1,4 @@
-package operator;
+package gr.aueb.data_mingler_optimizations.operator;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
@@ -10,14 +10,14 @@ import java.util.Set;
 // Exit error codes:
 // 1: wrong number of args
 
-public class mapOp {
+public class rollUpOp {
 
   public static void main(String[] args) throws IOException {
 
 	// command arguments should contain:
 	// rootNode - string
 	// childNode - string
-	// functionName - string
+	// childChildNode - string
 
 	if (args.length!=3) {
 		System.out.println("Wrong Number of arguments");
@@ -26,7 +26,7 @@ public class mapOp {
 
 	String rootNode = args[0];
 	String childNode = args[1];
-	String functionName = args[2];
+	String childChildNode = args[2];
 
     Jedis jedis = new Jedis("127.0.0.1", 6379);
     Jedis jedis2 = new Jedis("127.0.0.1", 6379);
@@ -34,13 +34,17 @@ public class mapOp {
 
     long startTime = System.currentTimeMillis();
 
-	String edge = rootNode+"-"+childNode;
-	Set<String> keys = jedis.smembers(edge);
+	String edge1 = rootNode+"-"+childNode;
+	String edge2 = childNode + "-" + childChildNode;
+	Set<String> keys = jedis.smembers(edge1);
 	for (String key: keys) {
-		List<String> values = jedis.lrange(edge+":"+key,0,-1);
-		jPipeline.del(edge+":"+key);
+		List<String> values = jedis.lrange(edge1+":"+key,0,-1);
+		jPipeline.del(edge1+":"+key);
 		for (String value : values) {
-			jPipeline.rpush(edge+":"+key,String.valueOf(functionName(value)));
+			List<String> values2 = jedis.lrange(edge2+":"+value,0,-1);
+			for (String value2: values2) {
+			  	jPipeline.rpush(edge1+":"+key,value2);
+			}
 		}
 	}
 	jPipeline.sync();

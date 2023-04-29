@@ -1,4 +1,4 @@
-package operator;
+package gr.aueb.data_mingler_optimizations.operator;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
