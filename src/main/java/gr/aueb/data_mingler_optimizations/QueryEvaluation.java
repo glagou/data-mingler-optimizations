@@ -1,8 +1,9 @@
 package gr.aueb.data_mingler_optimizations;
 
+import gr.aueb.data_mingler_optimizations.enums.KeyMode;
+import gr.aueb.data_mingler_optimizations.enums.OutputType;
 import gr.aueb.data_mingler_optimizations.exception.PathToPythonNotFoundException;
 import gr.aueb.data_mingler_optimizations.load.EdgesLoader;
-import gr.aueb.data_mingler_optimizations.operator.rollUpOp;
 import org.w3c.dom.Document;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -28,12 +29,14 @@ import java.util.*;
  * One can have a sequence of transformations in a ":" seperated list:
  * e.g. aggregate:avg
  * <br>
- * The error codes that the program currently exits with indicate the following:
- * 1: wrong number of arguments given
- * 2: second argument is not 'excel' or 'none'
- * 3: third argument is not 'all' or 'intersect'
- * 4: loading of edges has failed
- * 5: execution of an operator has failed
+ * For successful execution of this class, the following command line arguments should be provided:
+ * <ul>
+ *     <li>queryFilename - {@link String}</li>
+ *     <li>outputType - {@link OutputType} (output always goes to a csv file named $rootNode+$timestamp ("none").
+ *     If outputType is set to "excel" it invokes excel to present it)</li>
+ *     <li>keysMode - {@link KeyMode}</li>
+ * </ul>
+ * <br>
  */
 // TODO: parallel evals
 // TODO: deallocate Redis space (remove KL structures) as soon as possible
@@ -60,6 +63,13 @@ public class QueryEvaluation {
                 .filter(value -> new File(value, PYTHON_EXECUTABLE).exists())
                 .findFirst()
                 .orElseThrow(PathToPythonNotFoundException::new);
+    }
+
+    private static void throwExceptionIfCmdArgumentsAreInvalid(String[] args) {
+        if (args.length != 3) {
+            System.out.println("Wrong number of arguments");
+            System.exit(1); // wrong number of args
+        }
     }
 
     //************** This function recursively evals the child of a node
@@ -147,19 +157,10 @@ public class QueryEvaluation {
     public static void main(String[] args) throws ParserConfigurationException,
             XPathExpressionException, org.xml.sax.SAXException, IOException {
         String pathToPython = findPathToPython();
-        // command arguments should contain:
-        // queryFilename - string
-        // outputType - string (="excel"/"none") - output always goes to a csv file named $rootNode+$timestamp ("none"). If outputType is set to "excel" it invokes excel to present it
-        // keysMode - string : all or intersect
-
-        if (args.length != 3) {
-            System.out.println("Wrong number of arguments");
-            System.exit(1); // wrong number of args
-        }
-
+        throwExceptionIfCmdArgumentsAreInvalid(args);
         String queryFilename = args[0];
-        String outputType = args[1];
-        String keysMode = args[2];
+        OutputType outputType = OutputType.valueOf(args[1]);
+        KeyMode keysMode = KeyMode.valueOf(args[2]);
 
         if (!outputType.equals("excel") && !outputType.equals("none")) {
             System.out.println("Second argument should be 'excel' or 'none'");
