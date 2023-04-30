@@ -1,6 +1,7 @@
 package gr.aueb.data_mingler_optimizations;
 
 import gr.aueb.data_mingler_optimizations.enums.KeyMode;
+import gr.aueb.data_mingler_optimizations.enums.Output;
 import gr.aueb.data_mingler_optimizations.enums.OutputType;
 import gr.aueb.data_mingler_optimizations.exception.InvalidNumberOfCmdArgumentsException;
 import gr.aueb.data_mingler_optimizations.exception.LoadEdgesExecutionFailedException;
@@ -45,13 +46,14 @@ import java.util.*;
  * <br>
  */
 // TODO: parallel evals
-// TODO: deallocate Redis space (remove KL structures) as soon as possible
 // TODO: each edge consists of keys in the form "root-child:key" - could be a tremendous waste of memory space;
 //  maybe each edge can get an id (int)
 public class QueryEvaluation {
 
     private static final String PATH_ENV_VAR = "PATH";
     private static final String PYTHON_EXECUTABLE = "python";
+    private static final String CHILD_OF_PREFIX = "childOf";
+    private static final String PATH_TO_EXCEL = "c:\\Program Files (x86)\\Microsoft Office\\Office12\\excel.exe";
 
     private static final Map<String, List<String>> nodeToChildrenNodes = new HashMap<>();
     private static final Map<String, String> dvmNodesToActualLabels = new HashMap<>();
@@ -161,7 +163,7 @@ public class QueryEvaluation {
         childNodes = nodeToChildrenNodes.get(rootNode);
     }
 
-    public static void materializeEdge(String rootNode, List<String> childNodes) {
+    private static void materializeEdge(String rootNode, List<String> childNodes) {
         childNodes.forEach(childNode -> {
 
             String rootNodeDVM = dvmNodesToActualLabels.get(rootNode);
@@ -192,55 +194,98 @@ public class QueryEvaluation {
 
     }
 
-    public static void evaluateChild(String rootNode, String childNode) {
+    private static void evaluateChild(String rootNode, String childNode) {
         List<String> childrenOfChildNode = nodeToChildrenNodes.get(childNode);
         if (childrenOfChildNode.size() > 0) {
-            for (String childOfChildNode : childrenOfChildNode) {
+            childrenOfChildNode.forEach(childOfChildNode -> {
                 evaluateChild(childNode, childOfChildNode);
-                execTransformations(childNode, childOfChildNode);
-            }
+                OperatorUtils.executeTransformationOnEdge(childNode, childOfChildNode, pathToPython);
+            });
 
-            // combine all edges having as root the childNode in one edge: childNode -> childChildNode
-            // This is done by applying the gr.aueb.data_mingler_optimizations.operator.thetaCombineOp which includes the theta expression of childNode - if exists
-            // this should be the edge that will be joined (rollUp) with rootNode->childNode edge
+            String childOfChildNode = CHILD_OF_PREFIX.concat(childNode);
 
-            String childChildNode = "childOf" + childNode;
-
-            String allChildNodes = "";
+            StringBuilder allChildNodes = new StringBuilder();
             boolean isFirst = true;
             for (String childNode2 : childrenOfChildNode) {
                 if (!isFirst)
-                    allChildNodes += ",";
+                    allChildNodes.append(",");
                 isFirst = false;
-                allChildNodes += childNode2;
+                allChildNodes.append(childNode2);
             }
 
-            String outputChildNodes = "";
+            StringBuilder outputChildNodes = new StringBuilder();
             isFirst = true;
             for (String childNode2 : childrenOfChildNode) {
                 if (outputs.get(childNode2).equals("yes")) {
                     if (!isFirst)
-                        outputChildNodes += ",";
+                        outputChildNodes.append(",");
                     isFirst = false;
-                    outputChildNodes += childNode2;
+                    outputChildNodes.append(childNode2);
                 }
             }
 
             String theta = thetasOnInternalNodes.get(childNode);
 
-            // execute thetaCombine to combine all children of childNode
-
-            thetaCombine(childNode, childChildNode, allChildNodes, outputChildNodes, theta, keysMode);
-
-            rollupEdges(rootNode, childNode, childChildNode);
+            OperatorUtils.executeThetaCombine(childNode, childOfChildNode, allChildNodes.toString(),
+                    outputChildNodes.toString(), theta, keysMode, pathToPython);
+            OperatorUtils.executeRollupEdges(rootNode, childNode, childOfChildNode);
         }
     }
 
-    public static void evaluateChildAndExecuteTransformations() {
+    private static void evaluateChildAndExecuteTransformations() {
         childNodes.forEach(childNode -> {
             evaluateChild(rootNode, childNode);
             OperatorUtils.executeTransformationOnEdge(rootNode, childNode, pathToPython);
         });
+    }
+
+    private static List<String> initializeOutputChildNodes() {
+        List<String> outputChildNodes = new ArrayList<>();
+        childNodes.forEach(childNode -> {
+            if (outputs.get(childNode).equals(Output.YES.name().toLowerCase())) {
+                outputChildNodes.add(childNode);
+            }
+        });
+        return outputChildNodes;
+    }
+
+    private static String createOutputFile(Set<String> keys, List<String> outputChildNodes) throws IOException {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+        Date date = new Date();
+        String dt = formatter.format(date);
+        String outFilename = rootNode + "_" + dt + ".csv";
+        if (queryFilename.equals("tempQuery.qdvm.xml")) {
+            outFilename = "tempQuery.csv";
+        }
+        FileWriter outFile = new FileWriter(outFilename);
+        PrintWriter out = new PrintWriter(outFile);
+        for (String key : keys) {
+            out.print("\"" + key + "\"");
+            for (String childNode : outputChildNodes) {
+                out.print(",\"");
+                String edge = rootNode + "-" + childNode + ":" + key;
+                Set<String> values = GraphUtils.getElements(edge);
+                boolean started = false;
+                for (String value : values) {
+                    if (started)
+                        out.print(",");
+                    out.print(value);
+                    started = true;
+                }
+                out.print("\"");
+            }
+            out.println();
+        }
+
+        out.close();
+        outFile.close();
+        return outFilename;
+    }
+
+    private static void openWithExcelIfNeeded(String outFilename) throws IOException {
+        if (outputType.equals(OutputType.EXCEL)) {
+            Runtime.getRuntime().exec(PATH_TO_EXCEL + " " + outFilename);
+        }
     }
 
     public static void main(String[] args) throws IOException, XPathExpressionException {
@@ -257,50 +302,10 @@ public class QueryEvaluation {
         materializeEdge(rootNode, childNodes);
         loadEdges();
         evaluateChildAndExecuteTransformations();
-
-        List<String> outputChildNodes = new ArrayList<>();
-        for (String childNode : childNodes) {
-            if (outputs.get(childNode).equals("yes"))
-                outputChildNodes.add(childNode);
-        }
-
-        Set<String> keys = combineKeys(rootNode, outputChildNodes, keysMode);
-
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-        Date date = new Date();
-        String dt = formatter.format(date);
-        String outFilename = rootNode + "_" + dt + ".csv";
-        if (queryFilename.equals("tempQuery.qdvm.xml")) {
-            outFilename = "tempQuery.csv";
-        }
-        FileWriter outFile = new FileWriter(outFilename);
-        PrintWriter out = new PrintWriter(outFile);
-        for (String key : keys) {
-            // if (theta(key, thetaChildNodes)==true) then do the following - NOT IMPLEMENTED YET
-            out.print("\"" + key + "\"");
-            for (String childNode : outputChildNodes) {
-                out.print(",\"");
-                String edge = rootNode + "-" + childNode + ":" + key; // the key of the list of rootNode->childNode edge
-                List<String> values = jedis.lrange(edge, 0, -1);
-                boolean started = false;
-                for (String value : values) {
-                    if (started)
-                        out.print(",");
-                    out.print(value);
-                    started = true;
-                }
-                out.print("\"");
-            }
-            out.println();
-        }
-
-        out.close();
-        outFile.close();
-
-        if (outputType.equals("excel")) {
-            Process p = Runtime.getRuntime().exec("c:\\Program Files (x86)\\Microsoft Office\\Office12\\excel.exe " + outFilename);
-        }
-
+        List<String> outputChildNodes = initializeOutputChildNodes();
+        Set<String> keys = GraphUtils.combineKeys(rootNode, outputChildNodes, keysMode);
+        String outputFileName = createOutputFile(keys, outputChildNodes);
+        openWithExcelIfNeeded(outputFileName);
     }
 
     public static Map<String, String> getNodeToTransformations() {

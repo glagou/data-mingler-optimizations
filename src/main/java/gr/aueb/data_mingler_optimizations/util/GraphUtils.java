@@ -29,6 +29,10 @@ public class GraphUtils {
         return GRAPH.get(key).size();
     }
 
+    public static Set<String> getElements(String edge) {
+        return GRAPH.get(edge);
+    }
+
     public static Set<String> combineKeys(String rootNode, List<String> childNodes, KeyMode keyMode) {
         String graphKey = createGraphKey(rootNode, childNodes.get(0));
         Set<String> keys = GRAPH.get(graphKey);

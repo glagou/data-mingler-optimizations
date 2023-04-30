@@ -77,8 +77,8 @@ public class OperatorUtils {
     }
 
     public static void executeThetaCombine(String rootNode, String childNode,
-                                            String allChildNodes, String outputChildNodes,
-                                            String theta, KeyMode keyMode, String pythonPath) {
+                                           String allChildNodes, String outputChildNodes,
+                                           String theta, KeyMode keyMode, String pythonPath) {
         try {
             String command = String.format(THETA_COMBINE_OPERATOR_COMMAND_TEMPLATE, pythonPath, rootNode, childNode,
                     allChildNodes, outputChildNodes, theta, keyMode.name().toLowerCase());
@@ -96,11 +96,11 @@ public class OperatorUtils {
 
     }
 
-    public static void callRollupEdgesOperator(String rootNode, String childNode, String childChildNode) {
+    public static void executeRollupEdges(String rootNode, String childNode, String childChildNode) {
         try {
             rollUpOp.main(new String[]{rootNode, childNode, childChildNode});
         } catch (IOException e) {
-           throw new OperatorExecutionFailedException(Operator.ROLLUP_COMBINE);
+            throw new OperatorExecutionFailedException(Operator.ROLLUP_COMBINE);
         }
     }
 
