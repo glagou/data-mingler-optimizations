@@ -62,67 +62,6 @@ public class QueryEvaluation {
                 .orElseThrow(PathToPythonNotFoundException::new);
     }
 
-    //************** This function gets a root and its children and combine them into one (new) edge rootNode --> childNode based on a selection expression theta
-    public static void thetaCombine(String rootNode, String childNode, String allChildNodes, String outputChildNodes, String theta, String keysMode) throws IOException {
-
-        long starting = System.currentTimeMillis();
-        System.out.print("  **  Operator: thetaCombine on:" + rootNode + "(" + allChildNodes + ") - Elapsed time:"); // debug
-        try {
-
-            ProcessBuilder pb = new ProcessBuilder(path2Python + "python", "gr.aueb.data_mingler_optimizations.operator.thetaCombineOp.py", "" + rootNode, "" + childNode, "\"" + allChildNodes + "\"", "\"" + outputChildNodes + "\"", "\"" + theta + "\"", "\"" + keysMode + "\"");
-            Process p = pb.start();
-            // the code bellow is used for debugging python
-            // BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            // String inputLine=null;
-            // while ((inputLine = reader.readLine()) != null) {
-            //     System.out.println("      * Python Output: "+inputLine);
-            // }
-            int returnValue = p.waitFor();
-            if (returnValue != 0) {
-                System.out.println("gr.aueb.data_mingler_optimizations.operator.thetaCombineOp failed for rootNode: " + rootNode + ", childNode: " + childNode + " and children: " + allChildNodes + " with error code: " + returnValue);
-                System.exit(5);
-            }
-
-            //Process p = Runtime.getRuntime().exec("python c:\\datamingler\\implementation\\gr.aueb.data_mingler_optimizations.operator.thetaCombineOp.py "+rootNode+" "+childNode+" \""+allChildNodes+"\" \""+outputChildNodes+"\" \""+theta+"\" \""+keysMode+"\"");
-
-		/* debugging - what python returns
- 		BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-		BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-
-		String inputLine = null;
-		while ((inputLine = stdInput.readLine()) != null) {
-			System.out.println("Line: "+inputLine);
-		}
-
-		System.out.println("Here is the standard error of the command:\n");
-		String inputLine2 = null;
-		while ((inputLine2 = stdError.readLine()) != null) {
-			System.out.println("Error: "+inputLine2);
-		}
-		*/
-
-            //p.waitFor();
-            //int returnValue = p.exitValue();
-            //if (returnValue!=0) {
-            //	System.out.println("gr.aueb.data_mingler_optimizations.operator.thetaCombineOp failed for rootNode: "+rootNode+", childNode: "+childNode+" and children: "+allChildNodes+" with error code: "+returnValue);
-            //	System.exit(5);
-            //}
-
-        } catch (Exception e) {
-            System.out.println("Error in Process Builder");
-            e.printStackTrace();
-        }
-
-        long elapsedTime = System.currentTimeMillis() - starting;
-        System.out.println(elapsedTime);
-
-        //catch (InterruptedException e) {
-        //  	e.printStackTrace();
-        //}
-
-    } // of thetaCombine
-
-
     //************** This function gets two edges in a path and joins them together (a rollup)
     public static void rollupEdges(String rootNode, String childNode, String childChildNode) throws IOException {
         System.out.print("  **  Operator: rollUpJoin on:" + rootNode + "->" + childNode + " and " + childNode + "->" + childChildNode + " - Time elapsed: "); // debug
@@ -406,11 +345,12 @@ public class QueryEvaluation {
         estimatedTime = System.currentTimeMillis() - startTime;
         System.out.println("Completed:" + estimatedTime);
 
-    } // of main
+    }
 
     public static Map<String, String> getTransformations() {
         return transformations;
     }
-} // of program
+
+}
 
 

@@ -1,6 +1,7 @@
-package gr.aueb.data_mingler_optimizations.graph;
+package gr.aueb.data_mingler_optimizations.util;
 
 import gr.aueb.data_mingler_optimizations.QueryEvaluation;
+import gr.aueb.data_mingler_optimizations.enums.KeyMode;
 import gr.aueb.data_mingler_optimizations.enums.Operator;
 import gr.aueb.data_mingler_optimizations.exception.OperatorExecutionFailedException;
 import gr.aueb.data_mingler_optimizations.exception.TransformationsAreInvalidException;
@@ -19,6 +20,7 @@ public class OperatorUtils {
     private static final String AGGREGATE_OPERATOR_COMMAND_TEMPLATE = "java gr.aueb.data_mingler_optimizations.operator.aggregateOp %s %s %s";
     private static final String FILTER_OPERATOR_COMMAND_TEMPLATE = "%s" + "python filterOp.py %s %s \"%s\"";
     private static final String MAP_OPERATOR_COMMAND_TEMPLATE = "%s" + "python gr.aueb.data_mingler_optimizations.operator.mapOp.py %s %s \"%s\" \"%s\"";
+    private static final String THETA_COMBINE_OPERATOR_COMMAND_TEMPLATE = "%s" + "python gr.aueb.data_mingler_optimizations.operator.thetaCombineOp.py %s %s \"%s\" \"%s\" \"%s\" \"%s\"";
 
     private static void throwExceptionIfTransformationsAreInvalid(String[] transformationsToPerform) {
         if (transformationsToPerform[0].equals(NULL) || transformationsToPerform[0].equals(EMPTY)) {
@@ -74,9 +76,30 @@ public class OperatorUtils {
         }
     }
 
+    private static void callThetaCombineOperator(String rootNode, String childNode,
+                                                 String allChildNodes, String outputChildNodes,
+                                                 String theta, KeyMode keyMode, String pythonPath) {
+        try {
+            String command = String.format(THETA_COMBINE_OPERATOR_COMMAND_TEMPLATE, pythonPath, rootNode, childNode,
+                    allChildNodes, outputChildNodes, theta, keyMode.name().toLowerCase());
+            ProcessBuilder pb = new ProcessBuilder(command);
+            Process p = pb.start();
+            p.waitFor();
+            int returnValue = p.exitValue();
+            if (returnValue != 0) {
+                throw new OperatorExecutionFailedException(Operator.THETA_COMBINE);
+            }
+
+        } catch (InterruptedException | IOException e) {
+            throw new OperatorExecutionFailedException(Operator.THETA_COMBINE);
+        }
+
+    }
+
     public static void executeTransformationOnEdge(String rootNode, String childNode,
                                                    String pythonPath, String importPackage,
-                                                   String functionName) {
+                                                   String functionName, String allChildNodes,
+                                                   String outputChildNodes, String theta, KeyMode keyMode) {
         String[] transformationsToPerform = QueryEvaluation
                 .getTransformations()
                 .get(childNode)
@@ -90,10 +113,13 @@ public class OperatorUtils {
 
                     if (operatorName.equals(Operator.AGGREGATE.name().toLowerCase())) {
                         callAggregateOperator(rootNode, childNode, operatorParameters);
-                    } else if (operatorName.equals(Operator.FILTER.name().toLowerCase())){
+                    } else if (operatorName.equals(Operator.FILTER.name().toLowerCase())) {
                         callFilterOperator(rootNode, childNode, operatorParameters, pythonPath);
-                    } else if(operatorName.equals(Operator.MAP.name().toLowerCase())) {
+                    } else if (operatorName.equals(Operator.MAP.name().toLowerCase())) {
                         callMapOperator(rootNode, childNode, importPackage, functionName, pythonPath);
+                    } else if (operatorName.equals(Operator.THETA_COMBINE.name().toLowerCase())) {
+                        callThetaCombineOperator(rootNode, childNode, allChildNodes, outputChildNodes,
+                                theta, keyMode, pythonPath);
                     }
                 });
     }

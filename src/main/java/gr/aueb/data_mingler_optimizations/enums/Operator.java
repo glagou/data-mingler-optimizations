@@ -4,6 +4,7 @@ public enum Operator {
 
     AGGREGATE,
     FILTER,
-    MAP
+    MAP,
+    THETA_COMBINE
 
 }
