@@ -2,9 +2,15 @@ package gr.aueb.data_mingler_optimizations;
 
 import gr.aueb.data_mingler_optimizations.enums.KeyMode;
 import gr.aueb.data_mingler_optimizations.enums.OutputType;
+import gr.aueb.data_mingler_optimizations.exception.InvalidNumberOfCmdArgumentsException;
+import gr.aueb.data_mingler_optimizations.exception.LoadEdgesExecutionFailedException;
 import gr.aueb.data_mingler_optimizations.exception.PathToPythonNotFoundException;
+import gr.aueb.data_mingler_optimizations.exception.UnableToInitializeDocumentAndXpathException;
 import gr.aueb.data_mingler_optimizations.load.EdgesLoader;
+import gr.aueb.data_mingler_optimizations.util.GraphUtils;
+import gr.aueb.data_mingler_optimizations.util.OperatorUtils;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -47,42 +53,151 @@ public class QueryEvaluation {
     private static final String PATH_ENV_VAR = "PATH";
     private static final String PYTHON_EXECUTABLE = "python";
 
-    // TODO: Rename these and remove comments after we know what they do
-    private static final Map<String, List<String>> childrenLists = new HashMap<>(); // the children's list of each node in the query (global)
-    private static final Map<String, String> onNodes = new HashMap<>(); // the actual node in the DVM that a label corresponds to (e.g. X --> custID)
-    private static final Map<String, String> transformations = new HashMap<>(); // the transformations' sequence of each node in the query
-    private static final Map<String, String> thetas = new HashMap<>(); // the theta expression that has to be expressed on internal nodes in the query
-    private static final Map<String, String> outputs = new HashMap<>(); // "yes" or "no" - should the computed edge participate in the output or will it be used just in the theta?
-    private static final List<String> arguments = new ArrayList<>(); // list containing the args required for loadEdges command line arguments
+    private static final Map<String, List<String>> nodeToChildrenNodes = new HashMap<>();
+    private static final Map<String, String> dvmNodesToActualLabels = new HashMap<>();
+    private static final Map<String, String> nodeToTransformations = new HashMap<>();
+    private static final Map<String, String> thetasOnInternalNodes = new HashMap<>();
+    private static final Map<String, String> outputs = new HashMap<>();
+    private static final List<String> loadEdgesCmdArgs = new ArrayList<>();
 
-    private static String findPathToPython() {
+    private static String pathToPython;
+    private static String queryFilename;
+    private static OutputType outputType;
+    private static KeyMode keysMode;
+    private static Document document;
+    private static XPath xpath;
+    private static String rootNode;
+    private static List<String> childNodes;
+
+    private static void initializePathToPython() {
         String pathVariableFromEnv = System.getenv(PATH_ENV_VAR);
         String[] values = pathVariableFromEnv.split(File.pathSeparator);
-        return Arrays
+        pathToPython = Arrays
                 .stream(values)
                 .filter(value -> new File(value, PYTHON_EXECUTABLE).exists())
                 .findFirst()
                 .orElseThrow(PathToPythonNotFoundException::new);
     }
 
-    private static void throwExceptionIfCmdArgumentsAreInvalid(String[] args) {
+    private static void validateCmdArguments(String[] args) {
         if (args.length != 3) {
-            System.out.println("Wrong number of arguments");
-            System.exit(1); // wrong number of args
+            throw new InvalidNumberOfCmdArgumentsException();
         }
     }
 
-    //************** This function recursively evals the child of a node
-    public static void evalChild(String rootNode, String childNode, String keysMode) throws IOException {
-        System.out.println("------Evaluating Node:" + childNode + "(root:" + rootNode + ")");
-        List<String> childNodes = childrenLists.get(childNode); // children of childNode passed - used to be findChildren(childNode); //
-        if (childNodes.size() == 0) {    // childNode does not have children
-            // do nothing, return
-        } else {  // childNode has children, call evalChild recursively
-            //each child of childNode
-            for (String childNode2 : childNodes) {
-                evalChild(childNode, childNode2, keysMode);
-                execTransformations(childNode, childNode2);
+    private static void initializeValuesFromCmdArguments(String[] args) {
+        queryFilename = args[0];
+        outputType = OutputType.valueOf(args[1]);
+        keysMode = KeyMode.valueOf(args[2]);
+    }
+
+    private static void initializeDocumentAndXpath() {
+        try {
+            DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            document = parser.parse(new File(queryFilename));
+        } catch (SAXException | IOException | ParserConfigurationException e) {
+            throw new UnableToInitializeDocumentAndXpathException(queryFilename);
+        }
+        xpath = XPathFactory.newInstance().newXPath();
+    }
+
+    private static void populateNodeToChildrenNodes() throws XPathExpressionException {
+        int rows = 1;
+        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
+            String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
+            String children = xpath.evaluate("/query/node[position()=" + rows + "]/children", document).trim();
+            String[] child = children.split(",", -1);
+            List<String> childrenList = new ArrayList<String>();
+            if (!children.equals("")) {
+                childrenList.addAll(Arrays.asList(child));
+            }
+            nodeToChildrenNodes.put(label, childrenList);
+            rows++;
+        }
+    }
+
+    private static void populateDvmNodesToActualLabels() throws XPathExpressionException {
+        int rows = 1;
+        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
+            String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
+            String onNode = xpath.evaluate("/query/node[position()=" + rows + "]/onnode", document).trim();
+            dvmNodesToActualLabels.put(label, onNode);
+            rows++;
+        }
+    }
+
+    private static void populateNodeToTransformations() throws XPathExpressionException {
+        int rows = 1;
+        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
+            String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
+            String transf = xpath.evaluate("/query/node[position()=" + rows + "]/transformations", document).trim();
+            nodeToTransformations.put(label, transf);
+            rows++;
+        }
+    }
+
+    private static void populateThetasOnInternalNodes() throws XPathExpressionException {
+        int rows = 1;
+        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
+            String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
+            String theta = xpath.evaluate("/query/node[position()=" + rows + "]/theta", document).trim();
+            thetasOnInternalNodes.put(label, theta);
+            rows++;
+        }
+    }
+
+    private static void populateOutputs() throws XPathExpressionException {
+        int rows = 1;
+        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
+            String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
+            String output = xpath.evaluate("/query/node[position()=" + rows + "]/output", document).trim();
+            outputs.put(label, output);
+            rows++;
+        }
+    }
+
+    private static void initializeRootNodeAndChildNodes() throws XPathExpressionException {
+        rootNode = xpath.evaluate("/query/rootnode", document).trim();
+        childNodes = nodeToChildrenNodes.get(rootNode);
+    }
+
+    public static void materializeEdge(String rootNode, List<String> childNodes) {
+        childNodes.forEach(childNode -> {
+
+            String rootNodeDVM = dvmNodesToActualLabels.get(rootNode);
+            String childNodeDVM = dvmNodesToActualLabels.get(childNode);
+
+            if (GraphUtils.getNumberOfElements(rootNode, childNode) == 0) {
+                loadEdgesCmdArgs.add(rootNodeDVM);
+                loadEdgesCmdArgs.add(childNodeDVM);
+                loadEdgesCmdArgs.add(rootNode);
+                loadEdgesCmdArgs.add(childNode);
+            }
+
+            List<String> childrenOfChildNode = nodeToChildrenNodes.get(childNode);
+            if (childrenOfChildNode.size() != 0) {
+                materializeEdge(childNode, childrenOfChildNode);
+            }
+        });
+    }
+
+    private static void loadEdges() {
+        String[] cmdArgs = new String[loadEdgesCmdArgs.size()];
+        loadEdgesCmdArgs.toArray(cmdArgs);
+        try {
+            EdgesLoader.main(cmdArgs);
+        } catch (Exception e) {
+            throw new LoadEdgesExecutionFailedException(rootNode);
+        }
+
+    }
+
+    public static void evaluateChild(String rootNode, String childNode) {
+        List<String> childrenOfChildNode = nodeToChildrenNodes.get(childNode);
+        if (childrenOfChildNode.size() > 0) {
+            for (String childOfChildNode : childrenOfChildNode) {
+                evaluateChild(childNode, childOfChildNode);
+                execTransformations(childNode, childOfChildNode);
             }
 
             // combine all edges having as root the childNode in one edge: childNode -> childChildNode
@@ -93,7 +208,7 @@ public class QueryEvaluation {
 
             String allChildNodes = "";
             boolean isFirst = true;
-            for (String childNode2 : childNodes) {
+            for (String childNode2 : childrenOfChildNode) {
                 if (!isFirst)
                     allChildNodes += ",";
                 isFirst = false;
@@ -102,7 +217,7 @@ public class QueryEvaluation {
 
             String outputChildNodes = "";
             isFirst = true;
-            for (String childNode2 : childNodes) {
+            for (String childNode2 : childrenOfChildNode) {
                 if (outputs.get(childNode2).equals("yes")) {
                     if (!isFirst)
                         outputChildNodes += ",";
@@ -111,174 +226,39 @@ public class QueryEvaluation {
                 }
             }
 
-            String theta = thetas.get(childNode);
+            String theta = thetasOnInternalNodes.get(childNode);
 
             // execute thetaCombine to combine all children of childNode
 
             thetaCombine(childNode, childChildNode, allChildNodes, outputChildNodes, theta, keysMode);
 
             rollupEdges(rootNode, childNode, childChildNode);
-
-        } // of else
-
-    } // of evalChild
-
-
-    //************** This function recursively materializes all the edges of the selected tree. This is done once at the start of the main program
-    public static void materializeEdge(String rootNode, List<String> childNodes) throws IOException {
-        for (String childNode : childNodes) {
-            String rootNodeDVM = onNodes.get(rootNode);
-            String childNodeDVM = onNodes.get(childNode);
-            // first materialize rootNode-child edge
-            System.out.println("*** Materializing: " + rootNode + "(" + rootNodeDVM + ")->" + childNode + "(" + childNodeDVM + ")");
-            if (jedis.scard(rootNode + "-" + childNode) == 0) {
-                System.out.println("    Loading edge from data source");
-
-                arguments.add(rootNodeDVM);
-                arguments.add(childNodeDVM);
-                arguments.add(rootNode);
-                arguments.add(childNode);
-
-            } else {
-                System.out.println("    Edge is already materialized in system");
-            }
-
-
-            // then call recursively materializeEdge for each child of childNode
-            List<String> childNodes2 = childrenLists.get(childNode);
-            if (childNodes2.size() != 0)
-                materializeEdge(childNode, childNodes2); // recursive call
         }
     }
 
+    public static void evaluateChildAndExecuteTransformations() {
+        childNodes.forEach(childNode -> {
+            evaluateChild(rootNode, childNode);
+            OperatorUtils.executeTransformationOnEdge(rootNode, childNode, pathToPython);
+        });
+    }
 
-    //************** MAIN *****************************************************
+    public static void main(String[] args) throws IOException, XPathExpressionException {
+        initializePathToPython();
+        validateCmdArguments(args);
+        initializeValuesFromCmdArguments(args);
+        initializeDocumentAndXpath();
+        populateNodeToChildrenNodes();
+        populateDvmNodesToActualLabels();
+        populateNodeToTransformations();
+        populateThetasOnInternalNodes();
+        populateOutputs();
+        initializeRootNodeAndChildNodes();
+        materializeEdge(rootNode, childNodes);
+        loadEdges();
+        evaluateChildAndExecuteTransformations();
 
-    public static void main(String[] args) throws ParserConfigurationException,
-            XPathExpressionException, org.xml.sax.SAXException, IOException {
-        String pathToPython = findPathToPython();
-        throwExceptionIfCmdArgumentsAreInvalid(args);
-        String queryFilename = args[0];
-        OutputType outputType = OutputType.valueOf(args[1]);
-        KeyMode keysMode = KeyMode.valueOf(args[2]);
-
-        if (!outputType.equals("excel") && !outputType.equals("none")) {
-            System.out.println("Second argument should be 'excel' or 'none'");
-            System.exit(2);
-        }
-
-        if (!keysMode.equals("all") && !keysMode.equals("intersect")) {
-            System.out.println("Third argument should be 'all' or 'intersect'");
-            System.exit(3);
-        }
-
-        long startTime = System.currentTimeMillis();
-
-        DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc = parser.parse(new File(queryFilename));
-        XPath xpath = XPathFactory.newInstance().newXPath();
-
-        int rows = 1;
-
-        // populate the childrenLists Map
-        rows = 1;
-        while (xpath.evaluate("/query/node[position()=" + rows + "]", doc).trim() != "") {
-            String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", doc).trim();
-            String children = xpath.evaluate("/query/node[position()=" + rows + "]/children", doc).trim();
-            String[] child = children.split(",", -1);
-            List<String> childrenList = new ArrayList<String>();
-            if (!children.equals(""))
-                for (int i = 0; i < child.length; i++) {
-                    //System.out.println("Child:"+child[i]);
-                    childrenList.add(child[i]);
-                }
-            childrenLists.put(label, childrenList);
-            rows++;
-        }
-
-        // populate the onNodes Map
-        rows = 1;
-        while (xpath.evaluate("/query/node[position()=" + rows + "]", doc).trim() != "") {
-            String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", doc).trim();
-            String onNode = xpath.evaluate("/query/node[position()=" + rows + "]/onnode", doc).trim();
-            onNodes.put(label, onNode);
-            rows++;
-        }
-
-        // populate the transformations Map
-        rows = 1;
-        while (xpath.evaluate("/query/node[position()=" + rows + "]", doc).trim() != "") {
-            String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", doc).trim();
-            String transf = xpath.evaluate("/query/node[position()=" + rows + "]/transformations", doc).trim();
-            transformations.put(label, transf);
-            rows++;
-        }
-
-        // populate the thetas Map
-        rows = 1;
-        while (xpath.evaluate("/query/node[position()=" + rows + "]", doc).trim() != "") {
-            String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", doc).trim();
-            String theta = xpath.evaluate("/query/node[position()=" + rows + "]/theta", doc).trim();
-            thetas.put(label, theta);
-            rows++;
-        }
-
-        // populate the outputs Map
-        rows = 1;
-        while (xpath.evaluate("/query/node[position()=" + rows + "]", doc).trim() != "") {
-            String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", doc).trim();
-            String output = xpath.evaluate("/query/node[position()=" + rows + "]/output", doc).trim();
-            outputs.put(label, output);
-            rows++;
-        }
-
-        String rootNode = xpath.evaluate("/query/rootnode", doc).trim();
-
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-        Date date = new Date();
-        String dt = formatter.format(date);
-        String outFilename = rootNode + "_" + dt + ".csv";
-        if (queryFilename.equals("tempQuery.qdvm.xml")) { // it is the request from the UI interface - for now
-            outFilename = "tempQuery.csv";
-        }
-        FileWriter outFile = new FileWriter(outFilename);
-        PrintWriter out = new PrintWriter(outFile);
-
-
-        jedis.flushAll(); // no caching, has to be rethought
-
-        List<String> childNodes = childrenLists.get(rootNode);
-        materializeEdge(rootNode, childNodes); // it will recursively compute all edges of the tree, actually put the edges that have to be computed in a string
-
-        String[] cmdArgs = new String[arguments.size()];
-        arguments.toArray(cmdArgs);
-        try {
-            EdgesLoader.main(cmdArgs);
-        } catch (Exception e) {
-            System.out.println("loadEdges failed for query with rootNode: " + rootNode);
-            System.exit(4);
-        }
-
-        long estimatedTime = System.currentTimeMillis() - startTime;
-        System.out.println("Finished loading edges: " + estimatedTime);
-
-
-        for (String childNode : childNodes) {
-
-            evalChild(rootNode, childNode, keysMode);
-
-            estimatedTime = System.currentTimeMillis() - startTime;
-            System.out.println("Finished evaluating child " + childNode + ": " + estimatedTime);
-
-            execTransformations(rootNode, childNode);
-
-            estimatedTime = System.currentTimeMillis() - startTime;
-            System.out.println("Finished transforming child " + childNode + ": " + estimatedTime);
-
-        }
-
-        List<String> outputChildNodes = new ArrayList<String>();
-        ;
+        List<String> outputChildNodes = new ArrayList<>();
         for (String childNode : childNodes) {
             if (outputs.get(childNode).equals("yes"))
                 outputChildNodes.add(childNode);
@@ -286,6 +266,15 @@ public class QueryEvaluation {
 
         Set<String> keys = combineKeys(rootNode, outputChildNodes, keysMode);
 
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+        Date date = new Date();
+        String dt = formatter.format(date);
+        String outFilename = rootNode + "_" + dt + ".csv";
+        if (queryFilename.equals("tempQuery.qdvm.xml")) {
+            outFilename = "tempQuery.csv";
+        }
+        FileWriter outFile = new FileWriter(outFilename);
+        PrintWriter out = new PrintWriter(outFile);
         for (String key : keys) {
             // if (theta(key, thetaChildNodes)==true) then do the following - NOT IMPLEMENTED YET
             out.print("\"" + key + "\"");
@@ -312,13 +301,10 @@ public class QueryEvaluation {
             Process p = Runtime.getRuntime().exec("c:\\Program Files (x86)\\Microsoft Office\\Office12\\excel.exe " + outFilename);
         }
 
-        estimatedTime = System.currentTimeMillis() - startTime;
-        System.out.println("Completed:" + estimatedTime);
-
     }
 
-    public static Map<String, String> getTransformations() {
-        return transformations;
+    public static Map<String, String> getNodeToTransformations() {
+        return nodeToTransformations;
     }
 
 }

@@ -61,11 +61,10 @@ public class OperatorUtils {
     }
 
     private static void callMapOperator(String rootNode, String childNode,
-                                        String importPackage, String functionName,
-                                        String pythonPath) {
+                                        String[] operatorParameters, String pythonPath) {
         try {
             String command = String.format(MAP_OPERATOR_COMMAND_TEMPLATE, pythonPath, rootNode, childNode,
-                    importPackage, functionName);
+                    operatorParameters[1], operatorParameters[2]);
             Process p = Runtime.getRuntime().exec(command);
             p.waitFor();
             int returnValue = p.exitValue();
@@ -77,9 +76,9 @@ public class OperatorUtils {
         }
     }
 
-    private static void callThetaCombineOperator(String rootNode, String childNode,
-                                                 String allChildNodes, String outputChildNodes,
-                                                 String theta, KeyMode keyMode, String pythonPath) {
+    public static void executeThetaCombine(String rootNode, String childNode,
+                                            String allChildNodes, String outputChildNodes,
+                                            String theta, KeyMode keyMode, String pythonPath) {
         try {
             String command = String.format(THETA_COMBINE_OPERATOR_COMMAND_TEMPLATE, pythonPath, rootNode, childNode,
                     allChildNodes, outputChildNodes, theta, keyMode.name().toLowerCase());
@@ -106,13 +105,9 @@ public class OperatorUtils {
     }
 
 
-    public static void executeTransformationOnEdge(String rootNode, String childNode,
-                                                   String pythonPath, String importPackage,
-                                                   String functionName, String allChildNodes,
-                                                   String outputChildNodes, String theta, KeyMode keyMode,
-                                                   String childChildNode) {
+    public static void executeTransformationOnEdge(String rootNode, String childNode, String pythonPath) {
         String[] transformationsToPerform = QueryEvaluation
-                .getTransformations()
+                .getNodeToTransformations()
                 .get(childNode)
                 .split(SEMI_COLON, -1);
         throwExceptionIfTransformationsAreInvalid(transformationsToPerform);
@@ -121,18 +116,12 @@ public class OperatorUtils {
                     String[] transformationArgs = transformation.split(COLON, -1);
                     String operatorName = transformationArgs[0];
                     String[] operatorParameters = transformationArgs[1].split(COMMA);
-
                     if (operatorName.equals(Operator.AGGREGATE.name().toLowerCase())) {
                         callAggregateOperator(rootNode, childNode, operatorParameters);
                     } else if (operatorName.equals(Operator.FILTER.name().toLowerCase())) {
                         callFilterOperator(rootNode, childNode, operatorParameters, pythonPath);
                     } else if (operatorName.equals(Operator.MAP.name().toLowerCase())) {
-                        callMapOperator(rootNode, childNode, importPackage, functionName, pythonPath);
-                    } else if (operatorName.equals(Operator.THETA_COMBINE.name().toLowerCase())) {
-                        callThetaCombineOperator(rootNode, childNode, allChildNodes, outputChildNodes,
-                                theta, keyMode, pythonPath);
-                    } else if (operatorName.equals(Operator.ROLLUP_COMBINE.name().toLowerCase())) {
-                        callRollupEdgesOperator(rootNode, childNode, childChildNode);
+                        callMapOperator(rootNode, childNode, operatorParameters, pythonPath);
                     }
                 });
     }
