@@ -97,7 +97,7 @@ public class OperatorUtils {
 
     }
 
-    public static void callRollUpEdgesOperator(String rootNode, String childNode, String childChildNode) {
+    public static void callRollupEdgesOperator(String rootNode, String childNode, String childChildNode) {
         try {
             rollUpOp.main(new String[]{rootNode, childNode, childChildNode});
         } catch (IOException e) {
@@ -132,7 +132,7 @@ public class OperatorUtils {
                         callThetaCombineOperator(rootNode, childNode, allChildNodes, outputChildNodes,
                                 theta, keyMode, pythonPath);
                     } else if (operatorName.equals(Operator.ROLLUP_COMBINE.name().toLowerCase())) {
-                        callRollUpEdgesOperator(rootNode, childNode, childChildNode);
+                        callRollupEdgesOperator(rootNode, childNode, childChildNode);
                     }
                 });
     }
