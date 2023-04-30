@@ -62,37 +62,6 @@ public class QueryEvaluation {
                 .orElseThrow(PathToPythonNotFoundException::new);
     }
 
-    //************** This function gets two edges in a path and joins them together (a rollup)
-    public static void rollupEdges(String rootNode, String childNode, String childChildNode) throws IOException {
-        System.out.print("  **  Operator: rollUpJoin on:" + rootNode + "->" + childNode + " and " + childNode + "->" + childChildNode + " - Time elapsed: "); // debug
-
-        String[] cmdArgs = {rootNode, childNode, childChildNode};
-        try {
-            rollUpOp.main(cmdArgs);
-        } catch (Exception e) {
-            System.out.println("gr.aueb.data_mingler_optimizations.operator.rollUpOp failed for rootNode: " + rootNode + ", childNode: " + childNode + " and childChildNode: " + childChildNode);
-            System.exit(5);
-        }
-
-
-	/*
-	try {
-		Process p = Runtime.getRuntime().exec("java gr.aueb.data_mingler_optimizations.operator.rollUpOp "+rootNode+" "+childNode+" "+childChildNode);
-		p.waitFor();
-	    int returnValue = p.exitValue();
-	    if (returnValue!=0) {
-			System.out.println("gr.aueb.data_mingler_optimizations.operator.rollUpOp failed for rootNode: "+rootNode+", childNode: "+childNode+" and childChildNode: "+childChildNode+" with error code: "+returnValue);
-			System.exit(5);
-		}
-	}
-	catch (InterruptedException e) {
-		e.printStackTrace();
-	}
-	*/
-
-    } // of rollUpEdges
-
-
     //************** This function recursively evals the child of a node
     public static void evalChild(String rootNode, String childNode, String keysMode) throws IOException {
         System.out.println("------Evaluating Node:" + childNode + "(root:" + rootNode + ")");
@@ -170,7 +139,7 @@ public class QueryEvaluation {
             if (childNodes2.size() != 0)
                 materializeEdge(childNode, childNodes2); // recursive call
         }
-    } // of materializeEdge
+    }
 
 
     //************** MAIN *****************************************************
