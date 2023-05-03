@@ -5,7 +5,7 @@ import gr.aueb.data_mingler_optimizations.enums.KeyMode;
 import gr.aueb.data_mingler_optimizations.enums.Operator;
 import gr.aueb.data_mingler_optimizations.exception.OperatorExecutionFailedException;
 import gr.aueb.data_mingler_optimizations.exception.TransformationsAreInvalidException;
-import gr.aueb.data_mingler_optimizations.operator.rollUpOp;
+import gr.aueb.data_mingler_optimizations.operator.RollupOperator;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -97,13 +97,8 @@ public class OperatorUtils {
     }
 
     public static void executeRollupEdges(String rootNode, String childNode, String childChildNode) {
-        try {
-            rollUpOp.main(new String[]{rootNode, childNode, childChildNode});
-        } catch (IOException e) {
-            throw new OperatorExecutionFailedException(Operator.ROLLUP_COMBINE);
-        }
+        RollupOperator.main(new String[] { rootNode, childNode, childChildNode });
     }
-
 
     public static void executeTransformationOnEdge(String rootNode, String childNode, String pythonPath) {
         String[] transformationsToPerform = QueryEvaluation
