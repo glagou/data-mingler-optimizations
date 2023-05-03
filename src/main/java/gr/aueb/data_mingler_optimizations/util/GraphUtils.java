@@ -19,8 +19,16 @@ public class GraphUtils {
                 .concat(childNode);
     }
 
+    public static void putValue(String key, Set<String> value) {
+        GRAPH.put(key, value);
+    }
+
     public static void removeEdge(String rootNode, String childNode) {
         String key = createGraphKey(rootNode, childNode);
+        GRAPH.remove(key);
+    }
+
+    public static void removeElement(String key) {
         GRAPH.remove(key);
     }
 
