@@ -1,8 +1,8 @@
 package gr.aueb.data_mingler_optimizations;
 
-import gr.aueb.data_mingler_optimizations.enums.KeyMode;
-import gr.aueb.data_mingler_optimizations.enums.Output;
-import gr.aueb.data_mingler_optimizations.enums.OutputType;
+import gr.aueb.data_mingler_optimizations.enumerator.KeyMode;
+import gr.aueb.data_mingler_optimizations.enumerator.Output;
+import gr.aueb.data_mingler_optimizations.enumerator.OutputType;
 import gr.aueb.data_mingler_optimizations.exception.InvalidNumberOfCmdArgumentsException;
 import gr.aueb.data_mingler_optimizations.exception.LoadEdgesExecutionFailedException;
 import gr.aueb.data_mingler_optimizations.exception.PathToPythonNotFoundException;
@@ -54,13 +54,14 @@ public class QueryEvaluation {
     private static final String PYTHON_EXECUTABLE = "python";
     private static final String CHILD_OF_PREFIX = "childOf";
     private static final String PATH_TO_EXCEL = "c:\\Program Files (x86)\\Microsoft Office\\Office12\\excel.exe";
+    private static final String COMMA = ",";
 
-    private static final Map<String, List<String>> nodeToChildrenNodes = new HashMap<>();
-    private static final Map<String, String> dvmNodesToActualLabels = new HashMap<>();
-    private static final Map<String, String> nodeToTransformations = new HashMap<>();
-    private static final Map<String, String> thetasOnInternalNodes = new HashMap<>();
-    private static final Map<String, String> outputs = new HashMap<>();
-    private static final List<String> loadEdgesCmdArgs = new ArrayList<>();
+    private static final Map<String, List<String>> NODE_TO_CHILDREN_NODES = new HashMap<>();
+    private static final Map<String, String> DVM_NODES_TO_ACTUAL_LABELS = new HashMap<>();
+    private static final Map<String, String> NODE_TO_TRANSFORMATIONS = new HashMap<>();
+    private static final Map<String, String> THETAS_ON_INTERNAL_NODES = new HashMap<>();
+    private static final Map<String, String> OUTPUTS = new HashMap<>();
+    private static final List<String> LOAD_EDGES_CMD_ARGS = new ArrayList<>();
 
     private static String pathToPython;
     private static String queryFilename;
@@ -89,8 +90,8 @@ public class QueryEvaluation {
 
     private static void initializeValuesFromCmdArguments(String[] args) {
         queryFilename = args[0];
-        outputType = OutputType.valueOf(args[1]);
-        keysMode = KeyMode.valueOf(args[2]);
+        outputType = OutputType.valueOf(args[1].toUpperCase());
+        keysMode = KeyMode.valueOf(args[2].toUpperCase());
     }
 
     private static void initializeDocumentAndXpath() {
@@ -109,11 +110,11 @@ public class QueryEvaluation {
             String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
             String children = xpath.evaluate("/query/node[position()=" + rows + "]/children", document).trim();
             String[] child = children.split(",", -1);
-            List<String> childrenList = new ArrayList<String>();
+            List<String> childrenList = new ArrayList<>();
             if (!children.equals("")) {
                 childrenList.addAll(Arrays.asList(child));
             }
-            nodeToChildrenNodes.put(label, childrenList);
+            NODE_TO_CHILDREN_NODES.put(label, childrenList);
             rows++;
         }
     }
@@ -123,7 +124,7 @@ public class QueryEvaluation {
         while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
             String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
             String onNode = xpath.evaluate("/query/node[position()=" + rows + "]/onnode", document).trim();
-            dvmNodesToActualLabels.put(label, onNode);
+            DVM_NODES_TO_ACTUAL_LABELS.put(label, onNode);
             rows++;
         }
     }
@@ -133,7 +134,7 @@ public class QueryEvaluation {
         while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
             String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
             String transf = xpath.evaluate("/query/node[position()=" + rows + "]/transformations", document).trim();
-            nodeToTransformations.put(label, transf);
+            NODE_TO_TRANSFORMATIONS.put(label, transf);
             rows++;
         }
     }
@@ -143,7 +144,7 @@ public class QueryEvaluation {
         while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
             String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
             String theta = xpath.evaluate("/query/node[position()=" + rows + "]/theta", document).trim();
-            thetasOnInternalNodes.put(label, theta);
+            THETAS_ON_INTERNAL_NODES.put(label, theta);
             rows++;
         }
     }
@@ -153,30 +154,30 @@ public class QueryEvaluation {
         while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
             String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
             String output = xpath.evaluate("/query/node[position()=" + rows + "]/output", document).trim();
-            outputs.put(label, output);
+            OUTPUTS.put(label, output);
             rows++;
         }
     }
 
     private static void initializeRootNodeAndChildNodes() throws XPathExpressionException {
         rootNode = xpath.evaluate("/query/rootnode", document).trim();
-        childNodes = nodeToChildrenNodes.get(rootNode);
+        childNodes = NODE_TO_CHILDREN_NODES.get(rootNode);
     }
 
     private static void materializeEdge(String rootNode, List<String> childNodes) {
         childNodes.forEach(childNode -> {
 
-            String rootNodeDVM = dvmNodesToActualLabels.get(rootNode);
-            String childNodeDVM = dvmNodesToActualLabels.get(childNode);
+            String rootNodeDVM = DVM_NODES_TO_ACTUAL_LABELS.get(rootNode);
+            String childNodeDVM = DVM_NODES_TO_ACTUAL_LABELS.get(childNode);
 
             if (GraphUtils.getNumberOfElements(rootNode, childNode) == 0) {
-                loadEdgesCmdArgs.add(rootNodeDVM);
-                loadEdgesCmdArgs.add(childNodeDVM);
-                loadEdgesCmdArgs.add(rootNode);
-                loadEdgesCmdArgs.add(childNode);
+                LOAD_EDGES_CMD_ARGS.add(rootNodeDVM);
+                LOAD_EDGES_CMD_ARGS.add(childNodeDVM);
+                LOAD_EDGES_CMD_ARGS.add(rootNode);
+                LOAD_EDGES_CMD_ARGS.add(childNode);
             }
 
-            List<String> childrenOfChildNode = nodeToChildrenNodes.get(childNode);
+            List<String> childrenOfChildNode = NODE_TO_CHILDREN_NODES.get(childNode);
             if (childrenOfChildNode.size() != 0) {
                 materializeEdge(childNode, childrenOfChildNode);
             }
@@ -184,8 +185,8 @@ public class QueryEvaluation {
     }
 
     private static void loadEdges() {
-        String[] cmdArgs = new String[loadEdgesCmdArgs.size()];
-        loadEdgesCmdArgs.toArray(cmdArgs);
+        String[] cmdArgs = new String[LOAD_EDGES_CMD_ARGS.size()];
+        LOAD_EDGES_CMD_ARGS.toArray(cmdArgs);
         try {
             EdgesLoader.main(cmdArgs);
         } catch (Exception e) {
@@ -195,7 +196,7 @@ public class QueryEvaluation {
     }
 
     private static void evaluateChild(String rootNode, String childNode) {
-        List<String> childrenOfChildNode = nodeToChildrenNodes.get(childNode);
+        List<String> childrenOfChildNode = NODE_TO_CHILDREN_NODES.get(childNode);
         if (childrenOfChildNode.size() > 0) {
             childrenOfChildNode.forEach(childOfChildNode -> {
                 evaluateChild(childNode, childOfChildNode);
@@ -205,26 +206,24 @@ public class QueryEvaluation {
             String childOfChildNode = CHILD_OF_PREFIX.concat(childNode);
 
             StringBuilder allChildNodes = new StringBuilder();
-            boolean isFirst = true;
+            allChildNodes.append(COMMA);
             for (String childNode2 : childrenOfChildNode) {
-                if (!isFirst)
-                    allChildNodes.append(",");
-                isFirst = false;
                 allChildNodes.append(childNode2);
             }
 
             StringBuilder outputChildNodes = new StringBuilder();
-            isFirst = true;
-            for (String childNode2 : childrenOfChildNode) {
-                if (outputs.get(childNode2).equals("yes")) {
-                    if (!isFirst)
-                        outputChildNodes.append(",");
+            boolean isFirst=true;
+            for (String childNode2 : childNodes) {
+                if (OUTPUTS.get(childNode2).equals(Output.YES.name().toLowerCase())) {
+                    if (!isFirst) {
+                        outputChildNodes.append(COMMA);
+                    }
                     isFirst = false;
                     outputChildNodes.append(childNode2);
                 }
             }
 
-            String theta = thetasOnInternalNodes.get(childNode);
+            String theta = THETAS_ON_INTERNAL_NODES.get(childNode);
 
             OperatorUtils.executeThetaCombine(childNode, childOfChildNode, allChildNodes.toString(),
                     outputChildNodes.toString(), theta, keysMode, pathToPython);
@@ -242,7 +241,7 @@ public class QueryEvaluation {
     private static List<String> initializeOutputChildNodes() {
         List<String> outputChildNodes = new ArrayList<>();
         childNodes.forEach(childNode -> {
-            if (outputs.get(childNode).equals(Output.YES.name().toLowerCase())) {
+            if (OUTPUTS.get(childNode).equals(Output.YES.name().toLowerCase())) {
                 outputChildNodes.add(childNode);
             }
         });
@@ -309,7 +308,7 @@ public class QueryEvaluation {
     }
 
     public static Map<String, String> getNodeToTransformations() {
-        return nodeToTransformations;
+        return NODE_TO_TRANSFORMATIONS;
     }
 
 }

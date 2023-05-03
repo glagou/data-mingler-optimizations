@@ -1,6 +1,6 @@
 package gr.aueb.data_mingler_optimizations.exception;
 
-import gr.aueb.data_mingler_optimizations.enums.Operator;
+import gr.aueb.data_mingler_optimizations.enumerator.Operator;
 
 public class OperatorExecutionFailedException extends RuntimeException {
 

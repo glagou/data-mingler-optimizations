@@ -1,8 +1,8 @@
 package gr.aueb.data_mingler_optimizations.util;
 
 import gr.aueb.data_mingler_optimizations.QueryEvaluation;
-import gr.aueb.data_mingler_optimizations.enums.KeyMode;
-import gr.aueb.data_mingler_optimizations.enums.Operator;
+import gr.aueb.data_mingler_optimizations.enumerator.KeyMode;
+import gr.aueb.data_mingler_optimizations.enumerator.Operator;
 import gr.aueb.data_mingler_optimizations.exception.OperatorExecutionFailedException;
 import gr.aueb.data_mingler_optimizations.exception.TransformationsAreInvalidException;
 import gr.aueb.data_mingler_optimizations.operator.RollupOperator;
@@ -18,17 +18,19 @@ public class OperatorUtils {
     private static final String NULL = "null";
     private static final String EMPTY = "";
 
+    // TODO: Check if package name has to be before operator name
     private static final String AGGREGATE_OPERATOR_COMMAND_TEMPLATE = "java gr.aueb.data_mingler_optimizations.operator.aggregateOp %s %s %s";
     private static final String FILTER_OPERATOR_COMMAND_TEMPLATE = "%s" + "python filterOp.py %s %s \"%s\"";
     private static final String MAP_OPERATOR_COMMAND_TEMPLATE = "%s" + "python gr.aueb.data_mingler_optimizations.operator.mapOp.py %s %s \"%s\" \"%s\"";
     private static final String THETA_COMBINE_OPERATOR_COMMAND_TEMPLATE = "%s" + "python gr.aueb.data_mingler_optimizations.operator.thetaCombineOp.py %s %s \"%s\" \"%s\" \"%s\" \"%s\"";
 
-    private static void throwExceptionIfTransformationsAreInvalid(String[] transformationsToPerform) {
-        if (transformationsToPerform[0].equals(NULL) || transformationsToPerform[0].equals(EMPTY)) {
+    private static void validateTransformations(String[] transformationsToPerform) {
+        if (transformationsToPerform[0].equals(NULL) || transformationsToPerform[0].trim().equals(EMPTY)) {
             throw new TransformationsAreInvalidException();
         }
     }
 
+    // TODO: We can make this code for calling Processes reusable
     private static void callAggregateOperator(String rootNode, String childNode, String[] operationParameters) {
         try {
             String command = String.format(AGGREGATE_OPERATOR_COMMAND_TEMPLATE, rootNode, childNode,
@@ -100,22 +102,23 @@ public class OperatorUtils {
         RollupOperator.main(new String[] { rootNode, childNode, childChildNode });
     }
 
+    // TODO: Path to python can be directly retrieved from main program
     public static void executeTransformationOnEdge(String rootNode, String childNode, String pythonPath) {
         String[] transformationsToPerform = QueryEvaluation
                 .getNodeToTransformations()
                 .get(childNode)
                 .split(SEMI_COLON, -1);
-        throwExceptionIfTransformationsAreInvalid(transformationsToPerform);
+        validateTransformations(transformationsToPerform);
         Arrays.stream(transformationsToPerform)
                 .forEach(transformation -> {
                     String[] transformationArgs = transformation.split(COLON, -1);
                     String operatorName = transformationArgs[0];
-                    String[] operatorParameters = transformationArgs[1].split(COMMA);
-                    if (operatorName.equals(Operator.AGGREGATE.name().toLowerCase())) {
+                    String[] operatorParameters = transformationArgs[1].split(COMMA, -1);
+                    if (operatorName.equals(Operator.AGGREGATE.getNameAsCommandLineArgument())) {
                         callAggregateOperator(rootNode, childNode, operatorParameters);
-                    } else if (operatorName.equals(Operator.FILTER.name().toLowerCase())) {
+                    } else if (operatorName.equals(Operator.FILTER.getNameAsCommandLineArgument())) {
                         callFilterOperator(rootNode, childNode, operatorParameters, pythonPath);
-                    } else if (operatorName.equals(Operator.MAP.name().toLowerCase())) {
+                    } else if (operatorName.equals(Operator.MAP.getNameAsCommandLineArgument())) {
                         callMapOperator(rootNode, childNode, operatorParameters, pythonPath);
                     }
                 });

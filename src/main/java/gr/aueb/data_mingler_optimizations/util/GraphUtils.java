@@ -1,6 +1,6 @@
 package gr.aueb.data_mingler_optimizations.util;
 
-import gr.aueb.data_mingler_optimizations.enums.KeyMode;
+import gr.aueb.data_mingler_optimizations.enumerator.KeyMode;
 import gr.aueb.data_mingler_optimizations.graph.GraphManagerSingleton;
 
 import java.util.List;
@@ -9,9 +9,11 @@ import java.util.Set;
 
 public class GraphUtils {
 
+    // TODO: Verify this is a Set<String>
     private static final Map<String, Set<String>> GRAPH = GraphManagerSingleton.getGraph();
 
     private static final String HYPHEN = "-";
+    private static final String COLON = ":";
 
     private static String createGraphKey(String rootNode, String childNode) {
         return rootNode
@@ -23,9 +25,17 @@ public class GraphUtils {
         GRAPH.put(key, value);
     }
 
+    // TODO: Discuss why keys are stored this way and maybe refactor
     public static void removeEdge(String rootNode, String childNode) {
-        String key = createGraphKey(rootNode, childNode);
-        GRAPH.remove(key);
+        String baseKey = createGraphKey(rootNode, childNode);
+        Set<String> keys = GRAPH.get(baseKey);
+        keys.forEach(key -> {
+            String childKey = baseKey
+                    .concat(COLON)
+                    .concat(key);
+            GRAPH.remove(childKey);
+        });
+        GRAPH.remove(baseKey);
     }
 
     public static void removeElement(String key) {
