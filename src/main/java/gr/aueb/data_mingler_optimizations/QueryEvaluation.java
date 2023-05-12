@@ -3,9 +3,9 @@ package gr.aueb.data_mingler_optimizations;
 import gr.aueb.data_mingler_optimizations.enumerator.KeyMode;
 import gr.aueb.data_mingler_optimizations.enumerator.Output;
 import gr.aueb.data_mingler_optimizations.enumerator.OutputType;
+import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
 import gr.aueb.data_mingler_optimizations.exception.InvalidNumberOfCmdArgumentsException;
 import gr.aueb.data_mingler_optimizations.exception.LoadEdgesExecutionFailedException;
-import gr.aueb.data_mingler_optimizations.exception.PathToPythonNotFoundException;
 import gr.aueb.data_mingler_optimizations.exception.UnableToInitializeDocumentAndXpathException;
 import gr.aueb.data_mingler_optimizations.load.EdgesLoader;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
@@ -45,25 +45,17 @@ import java.util.*;
  * </ul>
  * <br>
  */
-// TODO: parallel evals
-// TODO: each edge consists of keys in the form "root-child:key" - could be a tremendous waste of memory space;
-//  maybe each edge can get an id (int)
 public class QueryEvaluation {
 
-    private static final String PATH_ENV_VAR = "PATH";
-    private static final String PYTHON_EXECUTABLE = "python";
-    private static final String CHILD_OF_PREFIX = "childOf";
     private static final String PATH_TO_EXCEL = "c:\\Program Files (x86)\\Microsoft Office\\Office12\\excel.exe";
-    private static final String COMMA = ",";
 
     private static final Map<String, List<String>> NODE_TO_CHILDREN_NODES = new HashMap<>();
-    private static final Map<String, String> DVM_NODES_TO_ACTUAL_LABELS = new HashMap<>();
+    private static final Map<String, String> DVM_NODES_TO_LABELS = new HashMap<>();
     private static final Map<String, String> NODE_TO_TRANSFORMATIONS = new HashMap<>();
     private static final Map<String, String> THETAS_ON_INTERNAL_NODES = new HashMap<>();
     private static final Map<String, String> OUTPUTS = new HashMap<>();
     private static final List<String> LOAD_EDGES_CMD_ARGS = new ArrayList<>();
 
-    private static String pathToPython;
     private static String queryFilename;
     private static OutputType outputType;
     private static KeyMode keysMode;
@@ -71,16 +63,6 @@ public class QueryEvaluation {
     private static XPath xpath;
     private static String rootNode;
     private static List<String> childNodes;
-
-    private static void initializePathToPython() {
-        String pathVariableFromEnv = System.getenv(PATH_ENV_VAR);
-        String[] values = pathVariableFromEnv.split(File.pathSeparator);
-        pathToPython = Arrays
-                .stream(values)
-                .filter(value -> new File(value, PYTHON_EXECUTABLE).exists())
-                .findFirst()
-                .orElseThrow(PathToPythonNotFoundException::new);
-    }
 
     private static void validateCmdArguments(String[] args) {
         if (args.length != 3) {
@@ -119,12 +101,12 @@ public class QueryEvaluation {
         }
     }
 
-    private static void populateDvmNodesToActualLabels() throws XPathExpressionException {
+    private static void populateDvmNodesToLabels() throws XPathExpressionException {
         int rows = 1;
         while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
             String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
             String onNode = xpath.evaluate("/query/node[position()=" + rows + "]/onnode", document).trim();
-            DVM_NODES_TO_ACTUAL_LABELS.put(label, onNode);
+            DVM_NODES_TO_LABELS.put(label, onNode);
             rows++;
         }
     }
@@ -166,11 +148,10 @@ public class QueryEvaluation {
 
     private static void materializeEdge(String rootNode, List<String> childNodes) {
         childNodes.forEach(childNode -> {
+            String rootNodeDVM = DVM_NODES_TO_LABELS.get(rootNode);
+            String childNodeDVM = DVM_NODES_TO_LABELS.get(childNode);
 
-            String rootNodeDVM = DVM_NODES_TO_ACTUAL_LABELS.get(rootNode);
-            String childNodeDVM = DVM_NODES_TO_ACTUAL_LABELS.get(childNode);
-
-            if (GraphUtils.getNumberOfElements(rootNode, childNode) == 0) {
+            if (GraphUtils.getNumberOfElementsWithHyphen(rootNode, childNode) == 0) {
                 LOAD_EDGES_CMD_ARGS.add(rootNodeDVM);
                 LOAD_EDGES_CMD_ARGS.add(childNodeDVM);
                 LOAD_EDGES_CMD_ARGS.add(rootNode);
@@ -195,38 +176,38 @@ public class QueryEvaluation {
 
     }
 
+    @SuppressWarnings("all")
     private static void evaluateChild(String rootNode, String childNode) {
         List<String> childrenOfChildNode = NODE_TO_CHILDREN_NODES.get(childNode);
         if (childrenOfChildNode.size() > 0) {
             childrenOfChildNode.forEach(childOfChildNode -> {
                 evaluateChild(childNode, childOfChildNode);
-                OperatorUtils.executeTransformationOnEdge(childNode, childOfChildNode, pathToPython);
+                OperatorUtils.executeTransformationOnEdge(childNode, childOfChildNode);
             });
 
-            String childOfChildNode = CHILD_OF_PREFIX.concat(childNode);
+            String childOfChildNode = StringConstant.CHILD_OF_PREFIX
+                    .getValue()
+                    .concat(childNode);
 
             StringBuilder allChildNodes = new StringBuilder();
-            allChildNodes.append(COMMA);
-            for (String childNode2 : childrenOfChildNode) {
-                allChildNodes.append(childNode2);
-            }
+            childrenOfChildNode.forEach(childOfChildNodeIter -> {
+                allChildNodes.append(childOfChildNodeIter);
+                allChildNodes.append(StringConstant.COMMA.getValue());
+            });
 
             StringBuilder outputChildNodes = new StringBuilder();
-            boolean isFirst=true;
-            for (String childNode2 : childNodes) {
-                if (OUTPUTS.get(childNode2).equals(Output.YES.name().toLowerCase())) {
-                    if (!isFirst) {
-                        outputChildNodes.append(COMMA);
-                    }
-                    isFirst = false;
-                    outputChildNodes.append(childNode2);
+            childNodes.forEach(childNodeIter -> {
+                if (OUTPUTS.get(childNode).equals(Output.YES.getValue())) {
+                    outputChildNodes.append(childNodeIter);
+                    outputChildNodes.append(StringConstant.COMMA.getValue());
                 }
-            }
+
+            });
 
             String theta = THETAS_ON_INTERNAL_NODES.get(childNode);
 
             OperatorUtils.executeThetaCombine(childNode, childOfChildNode, allChildNodes.toString(),
-                    outputChildNodes.toString(), theta, keysMode, pathToPython);
+                    outputChildNodes.toString(), theta);
             OperatorUtils.executeRollupEdges(rootNode, childNode, childOfChildNode);
         }
     }
@@ -234,14 +215,14 @@ public class QueryEvaluation {
     private static void evaluateChildAndExecuteTransformations() {
         childNodes.forEach(childNode -> {
             evaluateChild(rootNode, childNode);
-            OperatorUtils.executeTransformationOnEdge(rootNode, childNode, pathToPython);
+            OperatorUtils.executeTransformationOnEdge(rootNode, childNode);
         });
     }
 
     private static List<String> initializeOutputChildNodes() {
         List<String> outputChildNodes = new ArrayList<>();
         childNodes.forEach(childNode -> {
-            if (OUTPUTS.get(childNode).equals(Output.YES.name().toLowerCase())) {
+            if (OUTPUTS.get(childNode).equals(Output.YES.getValue())) {
                 outputChildNodes.add(childNode);
             }
         });
@@ -263,7 +244,7 @@ public class QueryEvaluation {
             for (String childNode : outputChildNodes) {
                 out.print(",\"");
                 String edge = rootNode + "-" + childNode + ":" + key;
-                Set<String> values = (Set<String>) GraphUtils.getElements(edge);
+                List<String> values = (List<String>) GraphUtils.getElements(edge);
                 boolean started = false;
                 for (String value : values) {
                     if (started)
@@ -288,12 +269,11 @@ public class QueryEvaluation {
     }
 
     public static void main(String[] args) throws IOException, XPathExpressionException {
-        initializePathToPython();
         validateCmdArguments(args);
         initializeValuesFromCmdArguments(args);
         initializeDocumentAndXpath();
         populateNodeToChildrenNodes();
-        populateDvmNodesToActualLabels();
+        populateDvmNodesToLabels();
         populateNodeToTransformations();
         populateThetasOnInternalNodes();
         populateOutputs();
@@ -302,13 +282,17 @@ public class QueryEvaluation {
         loadEdges();
         evaluateChildAndExecuteTransformations();
         List<String> outputChildNodes = initializeOutputChildNodes();
-        Set<String> keys = (Set<String>) GraphUtils.combineKeys(rootNode, outputChildNodes, keysMode);
+        Set<String> keys = (Set<String>) GraphUtils.combineKeys(rootNode, outputChildNodes);
         String outputFileName = createOutputFile(keys, outputChildNodes);
         openWithExcelIfNeeded(outputFileName);
     }
 
     public static Map<String, String> getNodeToTransformations() {
         return NODE_TO_TRANSFORMATIONS;
+    }
+
+    public static KeyMode getKeysMode() {
+        return keysMode;
     }
 
 }

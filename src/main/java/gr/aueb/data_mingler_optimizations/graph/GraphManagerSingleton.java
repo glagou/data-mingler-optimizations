@@ -6,11 +6,11 @@ import java.util.Map;
 
 public class GraphManagerSingleton {
 
-    // TODO: Verify this is a Collection<String>
     private static final Map<String, Collection<String>> GRAPH = new HashMap<>();
 
-    // Preventing instantiation through a private constructor
-    private GraphManagerSingleton() {}
+    private GraphManagerSingleton() {
+        // Preventing instantiation through a private constructor
+    }
 
     public static Map<String, Collection<String>> getGraph() {
         return GRAPH;

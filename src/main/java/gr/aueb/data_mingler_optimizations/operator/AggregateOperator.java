@@ -1,6 +1,6 @@
 package gr.aueb.data_mingler_optimizations.operator;
 
-import gr.aueb.data_mingler_optimizations.enums.AggregationType;
+import gr.aueb.data_mingler_optimizations.enumerator.AggregationType;
 import gr.aueb.data_mingler_optimizations.exception.InvalidNumberOfCmdArgumentsException;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 

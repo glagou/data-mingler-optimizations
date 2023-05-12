@@ -1,5 +1,10 @@
 package gr.aueb.data_mingler_optimizations.enumerator;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+@Getter
 public enum Operator {
 
     AGGREGATE("aggregate"),
@@ -10,12 +15,4 @@ public enum Operator {
 
     private final String nameAsCommandLineArgument;
 
-
-    Operator(String nameAsCommandLineArgument) {
-        this.nameAsCommandLineArgument = nameAsCommandLineArgument;
-    }
-
-    public String getNameAsCommandLineArgument() {
-        return nameAsCommandLineArgument;
-    }
 }
