@@ -43,11 +43,11 @@ public class AggregateOperator {
                 case MAX:
                     resultSet.add(Collections.max(values));
                 case SUM:
-                    Double sum = values.stream()
+                    double sum = values.stream()
                             .filter((s) -> s.matches("\\d+(\\.\\d+)?"))
                             .mapToDouble(Double::parseDouble)
                             .sum();
-                    resultSet.add(sum.toString());
+                    resultSet.add(Double.toString(sum));
                 case AVERAGE:
                     sum = values.stream()
                             .filter((s) -> s.matches("\\d+(\\.\\d+)?"))
