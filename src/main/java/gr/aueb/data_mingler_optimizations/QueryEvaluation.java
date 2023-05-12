@@ -263,7 +263,7 @@ public class QueryEvaluation {
             for (String childNode : outputChildNodes) {
                 out.print(",\"");
                 String edge = rootNode + "-" + childNode + ":" + key;
-                Set<String> values = GraphUtils.getElements(edge);
+                Set<String> values = (Set<String>) GraphUtils.getElements(edge);
                 boolean started = false;
                 for (String value : values) {
                     if (started)
@@ -302,7 +302,7 @@ public class QueryEvaluation {
         loadEdges();
         evaluateChildAndExecuteTransformations();
         List<String> outputChildNodes = initializeOutputChildNodes();
-        Set<String> keys = GraphUtils.combineKeys(rootNode, outputChildNodes, keysMode);
+        Set<String> keys = (Set<String>) GraphUtils.combineKeys(rootNode, outputChildNodes, keysMode);
         String outputFileName = createOutputFile(keys, outputChildNodes);
         openWithExcelIfNeeded(outputFileName);
     }
