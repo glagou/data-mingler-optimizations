@@ -40,14 +40,17 @@ public class AggregateOperator {
             switch (aggrType) {
                 case MIN:
                     resultSet.add(Collections.min(values));
+                    break;
                 case MAX:
                     resultSet.add(Collections.max(values));
+                    break;
                 case SUM:
                     double sum = values.stream()
                             .filter((s) -> s.matches("\\d+(\\.\\d+)?"))
                             .mapToDouble(Double::parseDouble)
                             .sum();
                     resultSet.add(Double.toString(sum));
+                    break;
                 case AVERAGE:
                     sum = values.stream()
                             .filter((s) -> s.matches("\\d+(\\.\\d+)?"))
@@ -58,10 +61,13 @@ public class AggregateOperator {
                             .count();
                     double avg = (count > 0) ? sum / count : 0.0;
                     resultSet.add(String.valueOf(avg));
+                    break;
                 case COUNT:
                     resultSet.add(String.valueOf(values.size()));
+                    break;
                 case ANY:
                     resultSet.add(new ArrayList<>(values).get(0));
+                    break;
             }
             GraphUtils.putValue(edge.concat(":").concat(key), resultSet);
         }
