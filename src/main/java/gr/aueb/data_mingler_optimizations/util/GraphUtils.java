@@ -45,7 +45,6 @@ public class GraphUtils {
         return keys;
     }
 
-
     public static Collection<String> getElements(String edge) {
         return GRAPH.get(edge);
     }
@@ -57,6 +56,12 @@ public class GraphUtils {
 
     public static void putValue(String key, Collection<String> value) {
         GRAPH.put(key, value);
+    }
+
+    public static void addValueToCollection(String key, String value) {
+        Collection<String> initialCollection = GRAPH.get(key);
+        initialCollection.add(value);
+        GRAPH.put(key, initialCollection);
     }
 
     public static void removeElement(String key) {
