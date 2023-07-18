@@ -3,6 +3,7 @@ package gr.aueb.data_mingler_optimizations.load;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.neo4j.driver.v1.*;
+import org.neo4j.driver.v1.Record;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -39,7 +40,7 @@ import java.util.stream.IntStream;
 record Edge(String nodeA, String nodeB, String aliasA, String aliasB, SourceType sourceType, String datasourceRow,
         String queryString,
         String[] keyPosStr, String[] valuePosStr) {
-};
+}
 
 public class EdgesLoader {
 
@@ -47,12 +48,9 @@ public class EdgesLoader {
 
     private static XPath xpath;
     private static Document document;
-    private static String datasourceRow;
-    private static List<Record> records;
     private static org.neo4j.driver.v1.Driver driver;
 
-    public static void main(String[] args) throws ParserConfigurationException,
-            XPathExpressionException, org.xml.sax.SAXException {
+    public static void main(String[] args) {
 
         Instant start = Instant.now();
 
@@ -60,7 +58,6 @@ public class EdgesLoader {
         initializeDocumentAndXpath();
         driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "1234"));
 
-        int numOfEdges = (args.length / 4);
         IntStream.range(0, args.length)
                 .filter(i -> i % 4 == 0)
                 .mapToObj(i -> Arrays.copyOfRange(args, i, i + 4))
@@ -73,19 +70,15 @@ public class EdgesLoader {
                     return edges.stream();
                 })
                 .forEach(edge -> {
-                    switch (edge.sourceType()) {
-                        case DB:
-                            loadFromDatabase(edge);
-                            break;
-                        case CSV:
-                            loadFromCsv(edge);
-                            break;
-                        case EXCEL:
-                            loadFromExcel(edge);
-                            break;
-                        case PROCESS:
-                            loadFromProcess(edge);
-                            break;
+                    try {
+                        switch (edge.sourceType()) {
+                            case DB -> loadFromDatabase(edge);
+                            case CSV -> loadFromCsv(edge);
+                            case EXCEL -> loadFromExcel(edge);
+                            case PROCESS -> loadFromProcess(edge);
+                        }
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
                     }
                 });
 
@@ -138,41 +131,33 @@ public class EdgesLoader {
         return records;
     }
 
-    private static Map<String, String> searchEdgeSourceType(String datasource, String nodeA, String nodeB) {
+    private static Map<String, String> searchEdgeSourceType(String datasource, String nodeA, String nodeB) throws XPathExpressionException {
         int rows = 1;
-        while (xpath.evaluate("/datasources/datasource[position()=" + rows + "]", document).trim() != "") {
+        while (!xpath.evaluate("/datasources/datasource[position()=" + rows + "]", document).trim().equals("")) {
             if (xpath.evaluate("/datasources/datasource[position()=" + rows + "]/name", document).trim()
                     .equals(datasource)) {
                 String sourceType = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/@type", document)
                         .trim();
-                return new HashMap<String, String>(Map.of("sourceType", sourceType, "row", String.valueOf(rows)));
+                return new HashMap<>(Map.of("sourceType", sourceType, "row", String.valueOf(rows)));
             }
             rows++;
         }
         throw new EdgeNotFoundException(datasource, nodeA, nodeB);
     }
 
-    private static void loadFromDatabase(Edge edge) {
+    private static void loadFromDatabase(Edge edge) throws XPathExpressionException {
         String dbSystemString = xpath.evaluate(edge.datasourceRow().concat("/system"), document).trim();
         String connString = xpath.evaluate(edge.datasourceRow().concat("/connection"), document).trim();
         String username = xpath.evaluate(edge.datasourceRow().concat("/username"), document).trim();
         String password = xpath.evaluate(edge.datasourceRow().concat("/password"), document).trim();
         String database = xpath.evaluate(edge.datasourceRow().concat("/database"), document).trim();
         try {
-            Connection connection;
+            Connection connection = null;
 
             DatabaseType dbSystem = DatabaseType.valueOf(dbSystemString.toUpperCase());
             switch (dbSystem) {
-                case MSACCESS:
-                    connection = DriverManager.getConnection("jdbc:ucanaccess://" + connString);
-                    break;
-                case ORACLE:
-                    throw new DatabaseVendorNotSupportedException(dbSystem);
-                    break;
-                case MYSQL:
-                    throw new DatabaseVendorNotSupportedException(dbSystem);
-                    break;
-                case SQLSERVER:
+                case MSACCESS -> connection = DriverManager.getConnection("jdbc:ucanaccess://" + connString);
+                case SQLSERVER -> {
                     Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
                     String initialConnectionString = "jdbc:sqlserver://" + connString + ";databaseName = " + database;
                     if (username.isEmpty() && password.isEmpty())
@@ -180,13 +165,8 @@ public class EdgesLoader {
                     else
                         connection = DriverManager.getConnection(
                                 initialConnectionString + ";username=" + username + ";password=" + password);
-                    break;
-                case POSTGRES:
-                    throw new DatabaseVendorNotSupportedException(dbSystem);
-                    break;
-                case DB2:
-                    throw new DatabaseVendorNotSupportedException(dbSystem);
-                    break;
+                }
+                case ORACLE, DB2, POSTGRES, MYSQL -> throw new DatabaseVendorNotSupportedException(dbSystem);
             }
 
             Statement statement = connection.createStatement();
@@ -194,20 +174,20 @@ public class EdgesLoader {
 
             while (resultSet.next()) {
                 // TODO: Streams maybe?
-                String key = "";
+                StringBuilder key = new StringBuilder();
                 for (int i = 0; i < edge.keyPosStr().length; i++) {
                     if (i != 0)
-                        key += ":";
-                    key += resultSet.getString(edge.keyPosStr()[i]);
+                        key.append(":");
+                    key.append(resultSet.getString(edge.keyPosStr()[i]));
                 }
-                String value = "";
+                StringBuilder value = new StringBuilder();
                 for (int i = 0; i < edge.valuePosStr().length; i++) {
                     if (i != 0)
-                        value += ":";
-                    value += resultSet.getString(edge.valuePosStr()[i]);
+                        value.append(":");
+                    value.append(resultSet.getString(edge.valuePosStr()[i]));
                 }
-                GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB() + ":" + key, value);
-                GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB(), key);
+                GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB() + ":" + key, value.toString());
+                GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB(), key.toString());
             }
 
             resultSet.close();
@@ -219,7 +199,7 @@ public class EdgesLoader {
 
     }
 
-    private static void loadFromCsv(Edge edge) {
+    private static void loadFromCsv(Edge edge) throws XPathExpressionException, IOException {
         String fileName = xpath.evaluate(edge.datasourceRow().concat("/filename"), document).trim();
         String path = xpath.evaluate(edge.datasourceRow().concat("/path"), document).trim();
         boolean headings = xpath.evaluate(edge.datasourceRow().concat("/headings"), document).trim().equals("yes");
@@ -237,28 +217,28 @@ public class EdgesLoader {
             String[] columns = inputLine.split(delimiter, -1);
 
             // TODO: Streams maybe?
-            String key = "";
+            StringBuilder key = new StringBuilder();
             for (int i = 0; i < edge.keyPosStr().length; i++) {
                 if (i != 0)
-                    key += ":";
-                key += columns[Integer.parseInt(edge.keyPosStr()[i]) - 1]; // we assume csv columns are numbered 1,2,...
+                    key.append(":");
+                key.append(columns[Integer.parseInt(edge.keyPosStr()[i]) - 1]); // we assume csv columns are numbered 1,2,...
                                                                            // in the graph, that's why the minus 1
             }
-            String value = "";
+            StringBuilder value = new StringBuilder();
             for (int i = 0; i < edge.valuePosStr().length; i++) {
                 if (i != 0)
-                    value += ":";
-                value += columns[Integer.parseInt(edge.valuePosStr()[i]) - 1]; // we assume csv columns are numbered
+                    value.append(":");
+                value.append(columns[Integer.parseInt(edge.valuePosStr()[i]) - 1]); // we assume csv columns are numbered
                                                                                // 1,2,... in the graph, that's why the
                                                                                // minus 1
             }
 
-            GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB() + ":" + key, value);
-            GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB(), key);
+            GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB() + ":" + key, value.toString());
+            GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB(), key.toString());
         }
     }
 
-    public static void loadFromExcel(Edge edge) {
+    public static void loadFromExcel(Edge edge) throws XPathExpressionException, IOException {
         String fileName = xpath.evaluate(edge.datasourceRow().concat("/filename"), document).trim();
         String path = xpath.evaluate(edge.datasourceRow().concat("/path"), document).trim();
         String sheetName = xpath.evaluate(edge.datasourceRow().concat("/sheet"), document).trim();
@@ -280,29 +260,29 @@ public class EdgesLoader {
                 continue;
             xlRow = xlSheet.getRow(r);
 
-            String key = "";
+            StringBuilder key = new StringBuilder();
             for (int i = 0; i < edge.keyPosStr().length; i++) {
                 xlCell = xlRow.getCell(Integer.parseInt(edge.keyPosStr()[i]) - 1);
                 if (i != 0)
-                    key += ":";
-                key += formatter.formatCellValue(xlCell); // we assume columns are numbered 1,2,... in the graph, that's
+                    key.append(":");
+                key.append(formatter.formatCellValue(xlCell)); // we assume columns are numbered 1,2,... in the graph, that's
                                                           // why the minus 1
             }
-            String value = "";
+            StringBuilder value = new StringBuilder();
             for (int i = 0; i < edge.valuePosStr().length; i++) {
                 xlCell = xlRow.getCell(Integer.parseInt(edge.valuePosStr()[i]) - 1);
                 if (i != 0)
-                    value += ":";
-                value += formatter.formatCellValue(xlCell); // we assume columns are numbered 1,2,... in the graph,
+                    value.append(":");
+                value.append(formatter.formatCellValue(xlCell)); // we assume columns are numbered 1,2,... in the graph,
                                                             // that's why the minus 1
             }
 
-            GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB() + ":" + key, value);
-            GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB(), key);
+            GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB() + ":" + key, value.toString());
+            GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB(), key.toString());
         }
     }
 
-    public static void loadFromProcess(Edge edge) {
+    public static void loadFromProcess(Edge edge) throws XPathExpressionException {
 
         String path = xpath.evaluate(edge.datasourceRow().concat("/path"), document).trim();
         String fileName = xpath.evaluate(edge.datasourceRow().concat("/filename"), document).trim();
@@ -314,28 +294,26 @@ public class EdgesLoader {
             Process p = Runtime.getRuntime().exec(engPath + engine + " " + path + fileName);
 
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            // BufferedReader stdError = new BufferedReader(new
-            // InputStreamReader(p.getErrorStream()));
 
-            String inputLine = null;
+            String inputLine;
             while ((inputLine = stdInput.readLine()) != null) {
                 String[] columns = inputLine.split(delimiter, -1);
 
-                String key = "";
+                StringBuilder key = new StringBuilder();
                 for (int i = 0; i < edge.keyPosStr().length; i++) {
                     if (i != 0)
-                        key += ":";
-                    key += columns[Integer.parseInt(edge.valuePosStr()[i]) - 1];
+                        key.append(":");
+                    key.append(columns[Integer.parseInt(edge.valuePosStr()[i]) - 1]);
                 }
-                String value = "";
+                StringBuilder value = new StringBuilder();
                 for (int i = 0; i < edge.valuePosStr().length; i++) {
                     if (i != 0)
-                        value += ":";
-                    value += columns[Integer.parseInt(edge.valuePosStr()[i]) - 1];
+                        value.append(":");
+                    value.append(columns[Integer.parseInt(edge.valuePosStr()[i]) - 1]);
                 }
 
-                GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB() + ":" + key, value);
-                GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB(), key);
+                GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB() + ":" + key, value.toString());
+                GraphUtils.addValueToCollection(edge.aliasA() + "-" + edge.aliasB(), key.toString());
             }
 
             p.waitFor();
@@ -345,7 +323,7 @@ public class EdgesLoader {
                 throw new RuntimeException("loadEdge failed during the evaluation of edge: " + edge.nodeA() + "->"
                         + edge.nodeB() + " with return error code:" + returnValue); // TODO: better exception
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         }
     }
