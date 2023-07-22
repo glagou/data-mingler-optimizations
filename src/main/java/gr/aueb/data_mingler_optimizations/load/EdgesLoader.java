@@ -24,7 +24,6 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.*;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -37,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static gr.aueb.data_mingler_optimizations.enumerator.DatabaseType.*;
+
 record Edge(String nodeA, String nodeB, String aliasA, String aliasB, SourceType sourceType, String datasourceRow,
         String queryString,
         String[] keyPosStr, String[] valuePosStr) {
@@ -48,7 +49,8 @@ public class EdgesLoader {
 
     private static XPath xpath;
     private static Document document;
-    private static org.neo4j.driver.v1.Driver driver;
+    private static Session sessionNeo4j;
+    private static DbConnectionPool connectionPool;
 
     public static void main(String[] args) {
 
@@ -56,7 +58,9 @@ public class EdgesLoader {
 
         validateCmdArguments(args);
         initializeDocumentAndXpath();
-        driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "1234"));
+        Driver dbDriver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "1234"));
+        sessionNeo4j = dbDriver.session();
+        connectionPool = new DbConnectionPool();
 
         IntStream.range(0, args.length)
                 .filter(i -> i % 4 == 0)
@@ -82,6 +86,9 @@ public class EdgesLoader {
                     }
                 });
 
+        sessionNeo4j.close();
+        connectionPool.closeConnections();
+
         Instant finish = Instant.now();
         long timeElapsed = Duration.between(start, finish).toMillis();
         System.out.println(timeElapsed);
@@ -106,8 +113,8 @@ public class EdgesLoader {
 
     private static List<Edge> getEdgesBetweenNodes(String nodeA, String nodeB, String aliasA, String aliasB) {
         List<Edge> records = new ArrayList<>();
-        try (Session session = driver.session()) {
-            StatementResult result = session.run("MATCH (a:attribute{name:'" + nodeA
+        try {
+            StatementResult result = sessionNeo4j.run("MATCH (a:attribute{name:'" + nodeA
                     + "'})-[r:has]->(b:attribute{name:'" + nodeB
                     + "'}) RETURN r.datasource as datasource, r.query as query, r.key as key, r.value as value");
             while (result.hasNext()) {
@@ -147,26 +154,31 @@ public class EdgesLoader {
 
     private static void loadFromDatabase(Edge edge) throws XPathExpressionException {
         String dbSystemString = xpath.evaluate(edge.datasourceRow().concat("/system"), document).trim();
+        DatabaseType dbSystem;
+        try {
+            dbSystem = DatabaseType.valueOf(dbSystemString.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new DatabaseVendorNotSupportedException(dbSystemString);
+        }
+
         String connString = xpath.evaluate(edge.datasourceRow().concat("/connection"), document).trim();
         String username = xpath.evaluate(edge.datasourceRow().concat("/username"), document).trim();
         String password = xpath.evaluate(edge.datasourceRow().concat("/password"), document).trim();
         String database = xpath.evaluate(edge.datasourceRow().concat("/database"), document).trim();
+
         try {
             Connection connection = null;
-
-            DatabaseType dbSystem = DatabaseType.valueOf(dbSystemString.toUpperCase());
             switch (dbSystem) {
-                case MSACCESS -> connection = DriverManager.getConnection("jdbc:ucanaccess://" + connString);
+                case MSACCESS -> connectionPool.getOrCreateConnection(MSACCESS, "jdbc:ucanaccess://" + connString);
                 case SQLSERVER -> {
-                    Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-                    String initialConnectionString = "jdbc:sqlserver://" + connString + ";databaseName = " + database;
-                    if (username.isEmpty() && password.isEmpty())
-                        connection = DriverManager.getConnection(initialConnectionString + ";integratedSecurity=true;");
-                    else
-                        connection = DriverManager.getConnection(
-                                initialConnectionString + ";username=" + username + ";password=" + password);
+                    String url = "jdbc:sqlserver://" + connString + ";databaseName=" + database;
+                    if (username.isEmpty() && password.isEmpty()) {
+                        url += ";integratedSecurity=true;";
+                    } else {
+                        url += ";username=" + username + ";password=" + password;
+                    }
+                    connection = connectionPool.getOrCreateConnection(dbSystem, url);
                 }
-                case ORACLE, DB2, POSTGRES, MYSQL -> throw new DatabaseVendorNotSupportedException(dbSystem);
             }
 
             Statement statement = connection.createStatement();
@@ -193,7 +205,7 @@ public class EdgesLoader {
             resultSet.close();
             statement.close();
             connection.close();
-        } catch (SQLException | ClassNotFoundException e) {
+        } catch (SQLException e) {
             throw new UnableToConnectToDatabaseException();
         }
 
