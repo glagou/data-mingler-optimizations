@@ -31,12 +31,12 @@ public class RollupOperator {
         String edge1 = rootNode + "-" + childNode;
         String edge2 = childNode + "-" + childChildNode;
 
-        Set<String> keys = new HashSet<String>(GraphUtils.getElements(edge1));
+        Set<String> keys = new HashSet<>(GraphUtils.getElements(edge1));
         for (String key : keys) {
-            List<String> values = new ArrayList<String>(GraphUtils.getElements(edge1 + ":" + key));
+            List<String> values = new ArrayList<>(GraphUtils.getElements(edge1 + ":" + key));
             GraphUtils.removeElement(edge1 + ":" + key);
             for (String value : values) {
-                List<String> values2 = new ArrayList<String>(GraphUtils.getElements(edge2 + ":" + value));
+                List<String> values2 = new ArrayList<>(GraphUtils.getElements(edge2 + ":" + value));
                 GraphUtils.putValue(edge1 + ":" + key, values2);
             }
         }
