@@ -10,4 +10,8 @@ public class DatabaseVendorNotSupportedException extends RuntimeException {
         super(String.format(MESSAGE, dbSystem.toString()));
     }
 
+    public DatabaseVendorNotSupportedException(String dbSystem) {
+        super(String.format(MESSAGE, dbSystem));
+    }
+
 }
