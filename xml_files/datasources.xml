@@ -1,0 +1,42 @@
+<datasources>
+	<datasource type="csv">
+		<id>
+			1
+		</id>
+		<name>
+			myCSV
+		</name>
+		<delimiter>
+			,
+		</delimiter>
+		<path>
+			data-mingler-optimizations\\data\\
+		</path>
+		<filename>
+			user_product_data.csv
+		</filename>
+		<headings>
+			yes
+		</headings>
+	</datasource>
+	<datasource type="excel">
+		<id>
+			2
+		</id>
+		<name>
+			myExcel
+		</name>
+		<path>
+			data-mingler-optimizations\\data\\
+		</path>
+		<filename>
+			product_info.xlsx
+		</filename>
+		<sheet>
+			Sheet1
+		</sheet>
+		<headings>
+			yes
+		</headings>
+	</datasource>
+</datasources>
