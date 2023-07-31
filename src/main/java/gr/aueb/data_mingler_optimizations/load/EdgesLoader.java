@@ -2,8 +2,8 @@ package gr.aueb.data_mingler_optimizations.load;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.neo4j.driver.v1.*;
-import org.neo4j.driver.v1.Record;
+import org.neo4j.driver.*;
+import org.neo4j.driver.Record;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -114,7 +114,7 @@ public class EdgesLoader {
     private static List<Edge> getEdgesBetweenNodes(String nodeA, String nodeB, String aliasA, String aliasB) {
         List<Edge> records = new ArrayList<>();
         try {
-            StatementResult result = sessionNeo4j.run("MATCH (a:attribute{name:'" + nodeA
+            Result result = sessionNeo4j.run("MATCH (a:attribute{name:'" + nodeA
                     + "'})-[r:has]->(b:attribute{name:'" + nodeB
                     + "'}) RETURN r.datasource as datasource, r.query as query, r.key as key, r.value as value");
             while (result.hasNext()) {
