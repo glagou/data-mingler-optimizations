@@ -10,7 +10,7 @@
 			,
 		</delimiter>
 		<path>
-			data-mingler-optimizations\\data\\
+			C:\Users\User\Desktop\Development\data-mingler-optimizations\src\main\resources\data\
 		</path>
 		<filename>
 			user_product_data.csv
@@ -27,7 +27,7 @@
 			myExcel
 		</name>
 		<path>
-			data-mingler-optimizations\\data\\
+			C:\Users\User\Desktop\Development\data-mingler-optimizations\src\main\resources\data\
 		</path>
 		<filename>
 			product_info.xlsx
