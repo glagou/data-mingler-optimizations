@@ -4,19 +4,11 @@ import gr.aueb.data_mingler_optimizations.QueryEvaluation;
 import gr.aueb.data_mingler_optimizations.enumerator.AggregationType;
 import gr.aueb.data_mingler_optimizations.enumerator.Operator;
 import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
-import gr.aueb.data_mingler_optimizations.exception.TransformationsAreInvalidException;
 import gr.aueb.data_mingler_optimizations.operator.*;
 
 import java.util.Arrays;
 
 public class OperatorUtils {
-
-    private static void validateTransformations(String[] transformationsToPerform) {
-        if (transformationsToPerform[0].equals(StringConstant.NULL.getValue())
-                || transformationsToPerform[0].trim().equals(StringConstant.EMPTY.getValue())) {
-            throw new TransformationsAreInvalidException();
-        }
-    }
 
     private static void callAggregateOperator(String rootNode, String childNode, String[] operationParameters) {
         AggregationType aggrType;
@@ -51,20 +43,24 @@ public class OperatorUtils {
                 .getNodeToTransformations()
                 .get(childNode)
                 .split(StringConstant.SEMI_COLON.getValue(), -1);
-        validateTransformations(transformationsToPerform);
-        Arrays.stream(transformationsToPerform)
-                .forEach(transformation -> {
-                    String[] transformationArgs = transformation.split(StringConstant.COLON.getValue(), -1);
-                    String operatorName = transformationArgs[0];
-                    String[] operatorParameters = transformationArgs[1].split(StringConstant.COMMA.getValue(), -1);
-                    if (operatorName.equals(Operator.AGGREGATE.getNameAsCommandLineArgument())) {
-                        callAggregateOperator(rootNode, childNode, operatorParameters);
-                    } else if (operatorName.equals(Operator.FILTER.getNameAsCommandLineArgument())) {
-                        callFilterOperator(rootNode, childNode, operatorParameters);
-                    } else if (operatorName.equals(Operator.MAP.getNameAsCommandLineArgument())) {
-                        callMapOperator(rootNode, childNode, operatorParameters);
-                    }
-                });
+
+        if (transformationsToPerform.length > 0 && !transformationsToPerform[0].isEmpty()
+                && !transformationsToPerform[0].equalsIgnoreCase(StringConstant.NULL.getValue())) {
+            Arrays.stream(transformationsToPerform)
+                    .forEach(transformation -> {
+                        String[] transformationArgs = transformation.split(StringConstant.COLON.getValue(), -1);
+                        String operatorName = transformationArgs[0];
+                        String[] operatorParameters = transformationArgs[1].split(StringConstant.COMMA.getValue(), -1);
+                        if (operatorName.equals(Operator.AGGREGATE.getNameAsCommandLineArgument())) {
+                            callAggregateOperator(rootNode, childNode, operatorParameters);
+                        } else if (operatorName.equals(Operator.FILTER.getNameAsCommandLineArgument())) {
+                            callFilterOperator(rootNode, childNode, operatorParameters);
+                        } else if (operatorName.equals(Operator.MAP.getNameAsCommandLineArgument())) {
+                            callMapOperator(rootNode, childNode, operatorParameters);
+                        }
+                    });
+        }
+
     }
 
 }

@@ -88,12 +88,12 @@ public class QueryEvaluation {
 
     private static void populateNodeToChildrenNodes() throws XPathExpressionException {
         int rows = 1;
-        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
+        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().isEmpty()) {
             String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
             String children = xpath.evaluate("/query/node[position()=" + rows + "]/children", document).trim();
             String[] child = children.split(",", -1);
             List<String> childrenList = new ArrayList<>();
-            if (!children.equals("")) {
+            if (!children.isEmpty()) {
                 childrenList.addAll(Arrays.asList(child));
             }
             NODE_TO_CHILDREN_NODES.put(label, childrenList);
@@ -103,7 +103,7 @@ public class QueryEvaluation {
 
     private static void populateDvmNodesToLabels() throws XPathExpressionException {
         int rows = 1;
-        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
+        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().isEmpty()) {
             String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
             String onNode = xpath.evaluate("/query/node[position()=" + rows + "]/onnode", document).trim();
             DVM_NODES_TO_LABELS.put(label, onNode);
@@ -113,7 +113,7 @@ public class QueryEvaluation {
 
     private static void populateNodeToTransformations() throws XPathExpressionException {
         int rows = 1;
-        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
+        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().isEmpty()) {
             String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
             String transf = xpath.evaluate("/query/node[position()=" + rows + "]/transformations", document).trim();
             NODE_TO_TRANSFORMATIONS.put(label, transf);
@@ -123,7 +123,7 @@ public class QueryEvaluation {
 
     private static void populateThetasOnInternalNodes() throws XPathExpressionException {
         int rows = 1;
-        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
+        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().isEmpty()) {
             String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
             String theta = xpath.evaluate("/query/node[position()=" + rows + "]/theta", document).trim();
             THETAS_ON_INTERNAL_NODES.put(label, theta);
@@ -133,7 +133,7 @@ public class QueryEvaluation {
 
     private static void populateOutputs() throws XPathExpressionException {
         int rows = 1;
-        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().equals("")) {
+        while (!xpath.evaluate("/query/node[position()=" + rows + "]", document).trim().isEmpty()) {
             String label = xpath.evaluate("/query/node[position()=" + rows + "]/label", document).trim();
             String output = xpath.evaluate("/query/node[position()=" + rows + "]/output", document).trim();
             OUTPUTS.put(label, output);

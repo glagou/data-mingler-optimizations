@@ -5,9 +5,7 @@ import gr.aueb.data_mingler_optimizations.enumerator.KeyMode;
 import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
 import gr.aueb.data_mingler_optimizations.graph.GraphManagerSingleton;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class GraphUtils {
 
@@ -51,7 +49,7 @@ public class GraphUtils {
 
     public static int getNumberOfElementsWithHyphen(String rootNode, String childNode) {
         String key = createGraphKeyWithHyphen(rootNode, childNode);
-        return GRAPH.get(key).size();
+        return GRAPH.get(key) != null ? GRAPH.get(key).size() : 0;
     }
 
     public static void putValue(String key, Collection<String> value) {
@@ -60,6 +58,9 @@ public class GraphUtils {
 
     public static void addValueToCollection(String key, String value) {
         Collection<String> initialCollection = GRAPH.get(key);
+        if (initialCollection == null) {
+            initialCollection = new HashSet<>();
+        }
         initialCollection.add(value);
         GRAPH.put(key, initialCollection);
     }
