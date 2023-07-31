@@ -1,7 +1,6 @@
 package gr.aueb.data_mingler_optimizations.operator;
 
 import gr.aueb.data_mingler_optimizations.enumerator.AggregationType;
-import gr.aueb.data_mingler_optimizations.exception.InvalidNumberOfCmdArgumentsException;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 
 import java.time.Duration;
@@ -14,7 +13,7 @@ import java.util.Set;
 
 public class AggregateOperator {
 
-    public static void run(String rootNode, String childNode,AggregationType aggrType) throws InvalidNumberOfCmdArgumentsException {
+    public static void run(String rootNode, String childNode,AggregationType aggrType) {
         Instant start = Instant.now();
 
         String edge = rootNode + "-" + childNode;

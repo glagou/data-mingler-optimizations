@@ -1,6 +1,5 @@
 package gr.aueb.data_mingler_optimizations.operator;
 
-import gr.aueb.data_mingler_optimizations.exception.InvalidNumberOfCmdArgumentsException;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 
 import javax.script.*;
@@ -12,7 +11,7 @@ public class FilterOperator {
     private static final ScriptEngineManager manager = new ScriptEngineManager();
     private static final ScriptEngine engine = manager.getEngineByName("python");
 
-    public static void run(String rootNode, String childNode, String expressionCL) throws InvalidNumberOfCmdArgumentsException {
+    public static void run(String rootNode, String childNode, String expressionCL) {
         Instant start = Instant.now();
         String expression = expressionCL.replace('$'+childNode+'$',"value");
 
