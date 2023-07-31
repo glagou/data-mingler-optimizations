@@ -1,10 +1,13 @@
 package gr.aueb.data_mingler_optimizations.util;
 
 import gr.aueb.data_mingler_optimizations.QueryEvaluation;
+import gr.aueb.data_mingler_optimizations.enumerator.AggregationType;
 import gr.aueb.data_mingler_optimizations.enumerator.Operator;
 import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
 import gr.aueb.data_mingler_optimizations.exception.TransformationsAreInvalidException;
 import gr.aueb.data_mingler_optimizations.operator.AggregateOperator;
+import gr.aueb.data_mingler_optimizations.operator.FilterOperator;
+import gr.aueb.data_mingler_optimizations.operator.MapOperator;
 import gr.aueb.data_mingler_optimizations.operator.RollupOperator;
 
 import java.util.Arrays;
@@ -19,15 +22,21 @@ public class OperatorUtils {
     }
 
     private static void callAggregateOperator(String rootNode, String childNode, String[] operationParameters) {
-        AggregateOperator.main(new String[]{rootNode, childNode, operationParameters[0]});
+        AggregationType aggrType;
+        try {
+            aggrType = AggregationType.valueOf(operationParameters[0]);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid aggregation type");
+        }
+        AggregateOperator.run(rootNode, childNode, aggrType);
     }
 
     private static void callFilterOperator(String rootNode, String childNode, String[] operationParameters) {
-        // TODO: Call Java program with rootNode, childNode, operationParameters[0]
+        FilterOperator.run(rootNode, childNode, operationParameters[0]);
     }
 
     private static void callMapOperator(String rootNode, String childNode, String[] operatorParameters) {
-        // TODO: Call Java program with rootNode, childNode, operatorParameters[1], operatorParameters[2]
+        MapOperator.run(rootNode, childNode, operatorParameters[0]);
     }
 
     public static void executeThetaCombine(String rootNode, String childNode, String allChildNodes,
@@ -36,7 +45,7 @@ public class OperatorUtils {
     }
 
     public static void executeRollupEdges(String rootNode, String childNode, String childChildNode) {
-        RollupOperator.main(new String[]{rootNode, childNode, childChildNode});
+        RollupOperator.run(rootNode, childNode, childChildNode);
     }
 
     // TODO: Path to python can be directly retrieved from main program

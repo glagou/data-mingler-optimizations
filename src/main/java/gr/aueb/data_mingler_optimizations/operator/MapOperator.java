@@ -15,22 +15,10 @@ public class MapOperator {
     private static final ScriptEngineManager manager = new ScriptEngineManager();
     private static final ScriptEngine engine = manager.getEngineByName("python");
 
-    private static void validateCmdArguments(String[] args) {
-        if (args.length != 3) {
-            throw new InvalidNumberOfCmdArgumentsException();
-        }
-    }
-
-    public static void main(String[] args) throws InvalidNumberOfCmdArgumentsException {
-
-        validateCmdArguments(args);
-
-        String rootNode = args[0];
-        String childNode = args[1];
-        String functionInvocation = args[2];
+    public static void run(String rootNode, String childNode, String functionInvocation) throws InvalidNumberOfCmdArgumentsException {
         Instant start = Instant.now();
 
-        functionInvocation = functionInvocation.replace('$'+childNode+'$', "value");
+        String modifiedFnInvocation = functionInvocation.replace('$'+childNode+'$', "value");
         String edge = rootNode + "-" + childNode;
         Set<String> keys = (Set<String>) GraphUtils.getElements(edge);
         for (String key : keys) {
@@ -41,7 +29,7 @@ public class MapOperator {
                 try {
                     Bindings bindings = new SimpleBindings();
                     bindings.put("value", value);
-                    Object result = engine.eval(functionInvocation, bindings);
+                    Object result = engine.eval(modifiedFnInvocation, bindings);
                     newValues.add(result.toString());
                 } catch (ScriptException e) {
                     System.out.println(e.getMessage());

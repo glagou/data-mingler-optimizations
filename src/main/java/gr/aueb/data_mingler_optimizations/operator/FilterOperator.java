@@ -12,22 +12,9 @@ public class FilterOperator {
     private static final ScriptEngineManager manager = new ScriptEngineManager();
     private static final ScriptEngine engine = manager.getEngineByName("python");
 
-    private static void validateCmdArguments(String[] args) {
-        if (args.length != 3) {
-            throw new InvalidNumberOfCmdArgumentsException();
-        }
-    }
-
-    public static void main(String[] args) throws InvalidNumberOfCmdArgumentsException {
-
-        validateCmdArguments(args);
-
-        String rootNode = args[0];
-        String childNode = args[1];
-        String expressionCL = args[2];
-        String expression = expressionCL.replace('$'+childNode+'$',"value");
-
+    public static void run(String rootNode, String childNode, String expressionCL) throws InvalidNumberOfCmdArgumentsException {
         Instant start = Instant.now();
+        String expression = expressionCL.replace('$'+childNode+'$',"value");
 
         String edge = rootNode + "-" + childNode;
         Set<String> keys = (Set<String>) GraphUtils.getElements(edge);

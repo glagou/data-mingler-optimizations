@@ -12,20 +12,7 @@ import java.util.Set;
 
 
 public class RollupOperator {
-
-    private static void validateCmdArguments(String[] args) {
-        if (args.length != 3) {
-            throw new InvalidNumberOfCmdArgumentsException();
-        }
-    }
-
-    public static void main(String[] args) throws InvalidNumberOfCmdArgumentsException {
-        validateCmdArguments(args);
-
-        String rootNode = args[0];
-        String childNode = args[1];
-        String childChildNode = args[2];
-
+    public static void run(String rootNode, String childNode, String childChildNode) throws InvalidNumberOfCmdArgumentsException {
         Instant start = Instant.now();
 
         String edge1 = rootNode + "-" + childNode;
