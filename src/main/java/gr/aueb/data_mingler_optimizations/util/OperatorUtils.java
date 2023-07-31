@@ -5,10 +5,7 @@ import gr.aueb.data_mingler_optimizations.enumerator.AggregationType;
 import gr.aueb.data_mingler_optimizations.enumerator.Operator;
 import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
 import gr.aueb.data_mingler_optimizations.exception.TransformationsAreInvalidException;
-import gr.aueb.data_mingler_optimizations.operator.AggregateOperator;
-import gr.aueb.data_mingler_optimizations.operator.FilterOperator;
-import gr.aueb.data_mingler_optimizations.operator.MapOperator;
-import gr.aueb.data_mingler_optimizations.operator.RollupOperator;
+import gr.aueb.data_mingler_optimizations.operator.*;
 
 import java.util.Arrays;
 
@@ -41,7 +38,7 @@ public class OperatorUtils {
 
     public static void executeThetaCombine(String rootNode, String childNode, String allChildNodes,
                                            String outputChildNodes, String theta) {
-        // TODO: Call Java program with rootNode, childNode, allChildNodes, outputChildNodes, theta, keyMode
+        ThetaCombineOperator.run(rootNode, childNode, allChildNodes, outputChildNodes, theta);
     }
 
     public static void executeRollupEdges(String rootNode, String childNode, String childChildNode) {

@@ -13,7 +13,7 @@ public class ThetaCombineOperator {
     private static final ScriptEngine engine = manager.getEngineByName("python");
 
     public static void run(String rootNode, String newChildNode, String allChildNodesCL, String outputChildNodesCL,
-                            String thetaCL) throws ScriptException {
+                            String thetaCL) {
 
         Instant start = Instant.now();
 
