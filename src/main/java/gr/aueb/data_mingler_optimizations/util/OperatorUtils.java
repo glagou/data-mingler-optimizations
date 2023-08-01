@@ -11,12 +11,7 @@ import java.util.Arrays;
 public class OperatorUtils {
 
     private static void callAggregateOperator(String rootNode, String childNode, String[] operationParameters) {
-        AggregationType aggrType;
-        try {
-            aggrType = AggregationType.valueOf(operationParameters[0]);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid aggregation type");
-        }
+        AggregationType aggrType = AggregationType.valueOf(operationParameters[0].toUpperCase());
         AggregateOperator.run(rootNode, childNode, aggrType);
     }
 
@@ -25,7 +20,7 @@ public class OperatorUtils {
     }
 
     private static void callMapOperator(String rootNode, String childNode, String[] operatorParameters) {
-        MapOperator.run(rootNode, childNode, operatorParameters[0]);
+        MapOperator.run(rootNode, childNode, operatorParameters[2]);
     }
 
     public static void executeThetaCombine(String rootNode, String childNode, String allChildNodes,
@@ -50,13 +45,17 @@ public class OperatorUtils {
                         String[] transformationArgs = transformation.split(StringConstant.COLON.getValue(), -1);
                         String operatorName = transformationArgs[0];
                         String[] operatorParameters = transformationArgs[1].split(StringConstant.COMMA.getValue(), -1);
-                        if (operatorName.equals(Operator.AGGREGATE.getNameAsCommandLineArgument())) {
+                        System.out.println("**  Operator: " + operatorName + ", params: " +
+                                Arrays.toString(operatorParameters));
+                        if (operatorName.equalsIgnoreCase(Operator.AGGREGATE.getNameAsCommandLineArgument())) {
                             callAggregateOperator(rootNode, childNode, operatorParameters);
-                        } else if (operatorName.equals(Operator.FILTER.getNameAsCommandLineArgument())) {
+                        } else if (operatorName.equalsIgnoreCase(Operator.FILTER.getNameAsCommandLineArgument())) {
                             callFilterOperator(rootNode, childNode, operatorParameters);
-                        } else if (operatorName.equals(Operator.MAP.getNameAsCommandLineArgument())) {
+                        } else if (operatorName.equalsIgnoreCase(Operator.MAP.getNameAsCommandLineArgument())) {
                             callMapOperator(rootNode, childNode, operatorParameters);
                         }
+                        System.out.println("Executed transformation with operator: " + operatorName + " and params: "
+                                + Arrays.toString(operatorParameters));
                     });
 
         }

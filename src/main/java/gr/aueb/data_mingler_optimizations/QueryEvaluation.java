@@ -184,7 +184,7 @@ public class QueryEvaluation {
 
     @SuppressWarnings("all")
     private static void evaluateChild(String rootNode, String childNode) {
-        System.out.println("------ Evaluating Node:" + childNode + "(root:" + rootNode + ")");
+        System.out.println("------ Evaluating Node: " + childNode + "(root:" + rootNode + ")");
         List<String> childrenOfChildNode = NODE_TO_CHILDREN_NODES.get(childNode);
         if (childrenOfChildNode.size() > 0) {
             childrenOfChildNode.forEach(childOfChildNode -> {
