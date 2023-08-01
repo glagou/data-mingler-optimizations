@@ -1,6 +1,7 @@
 package gr.aueb.data_mingler_optimizations.operator;
 
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
+import org.python.jsr223.PyScriptEngineFactory;
 
 import javax.script.*;
 import java.time.Duration;
@@ -12,9 +13,10 @@ import java.util.Set;
 
 public class MapOperator {
     private static final ScriptEngineManager manager = new ScriptEngineManager();
-    private static final ScriptEngine engine = manager.getEngineByName("python");
 
     public static void run(String rootNode, String childNode, String functionInvocation) {
+        manager.registerEngineExtension("python", new PyScriptEngineFactory());
+        ScriptEngine engine = manager.getEngineByName("python");
         Instant start = Instant.now();
 
         String modifiedFnInvocation = functionInvocation.replace('$'+childNode+'$', "value");
