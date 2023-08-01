@@ -11,11 +11,29 @@ import java.util.*;
 
 public class ThetaCombineOperator {
     private static final ScriptEngineManager manager = new ScriptEngineManager();
+    private static ScriptEngine engine;
+
+    private static boolean evaluateTheta(String theta, String key, String rootNode, String[] allChildNodes) {
+        if (theta.equals("True")) return true;
+        try {
+            for (String childNode : allChildNodes) {
+                String element = ((List<String>) GraphUtils.getElements(rootNode + '-' + childNode + ':' + key)).get(0);
+                theta = theta.replace('$' + childNode + '$', element);
+            }
+            Bindings bindings = new SimpleBindings();
+            bindings.put("key", key);
+            Object result = engine.eval(theta, bindings);
+            return result instanceof Boolean && (Boolean) result;
+        } catch (ScriptException e) {
+            System.out.println(e.getMessage());
+        }
+        return false;
+    }
 
     public static void run(String rootNode, String newChildNode, String allChildNodesCL, String outputChildNodesCL,
                            String thetaCL) {
         manager.registerEngineExtension("python", new PyScriptEngineFactory());
-        ScriptEngine engine = manager.getEngineByName("python");
+        engine = manager.getEngineByName("python");
         Instant start = Instant.now();
 
         boolean hasOutput = !outputChildNodesCL.isEmpty();
@@ -25,47 +43,34 @@ public class ThetaCombineOperator {
         String theta = "True";
         if (!thetaCL.isEmpty()) {
             theta = thetaCL.replace('$' + rootNode + '$', "key");
-            for (String childNode : allChildNodes) {
-                // TODO: Fix by adding "key" binding somehow. Originally was: "r.lrange(\""+rootNode+'-'+childNode+":\"+key,0,1)[0]"
-                theta = theta.replace(
-                        '$' + childNode + '$', ((List<String>) GraphUtils.getElements(rootNode + '-' + childNode)).get(0)
-                );
-            }
         }
 
         boolean isFirst = true;
         Set<String> keys = new HashSet<>();
         for (String childNode : allChildNodes) {
-            String edge = rootNode + "-" + childNode;
             if (isFirst) {
-                keys = (Set<String>) GraphUtils.getElements(edge);
+                keys = (Set<String>) GraphUtils.getElements(rootNode + "-" + childNode);
                 isFirst = false;
+                continue;
             }
-            keys.retainAll(GraphUtils.getElements(edge));
+            keys.retainAll(GraphUtils.getElements(rootNode + "-" + childNode));
         }
 
         String newEdge = rootNode + '-' + newChildNode;
 
         for (String key : keys) {
-            try {
-                Bindings bindings = new SimpleBindings();
-                bindings.put("key", key);
-                Object result = engine.eval(theta, bindings);
-                if (result instanceof Boolean && (Boolean) result) {
-                    GraphUtils.addValueToCollection(newEdge, key);
-                    if (hasOutput) {
-                        for (String childNode : outputChildNodes) {
-                            String nextEdge = rootNode + '-' + childNode + ':' + key;
-                            Collection<String> elements = GraphUtils.getElements(nextEdge);
-                            List<String> values = new ArrayList<>(elements);
-                            GraphUtils.putValue(newEdge + ':' + key, values);
-                        }
-                    } else {
-                        GraphUtils.addValueToCollection(newEdge + ':' + key, key);
+            if (evaluateTheta(theta, key, rootNode, allChildNodes)) {
+                GraphUtils.addValueToCollection(newEdge, key);
+                if (hasOutput) {
+                    for (String childNode : outputChildNodes) {
+                        String nextEdge = rootNode + '-' + childNode + ':' + key;
+                        Collection<String> elements = GraphUtils.getElements(nextEdge);
+                        List<String> values = new ArrayList<>(elements);
+                        GraphUtils.putValue(newEdge + ':' + key, values);
                     }
+                } else {
+                    GraphUtils.addValueToCollection(newEdge + ':' + key, key);
                 }
-            } catch (ScriptException e) {
-                System.out.println(e.getMessage());
             }
         }
 
