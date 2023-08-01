@@ -52,8 +52,18 @@ public class GraphUtils {
         return GRAPH.get(key) != null ? GRAPH.get(key).size() : 0;
     }
 
-    public static void setCollection(String key, Collection<String> value) {
-        GRAPH.put(key, value);
+    public static void setCollection(String key, Collection<String> values) {
+        GRAPH.put(key, values);
+    }
+
+    public static void addAll(String key, Collection<String> values) {
+        Collection<String> initialCollection = GRAPH.get(key);
+        if (initialCollection == null) {
+            setCollection(key, values);
+            return;
+        }
+        initialCollection.addAll(values);
+        setCollection(key, initialCollection);
     }
 
     public static void addValueToCollection(String key, String value) {

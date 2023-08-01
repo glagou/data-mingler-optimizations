@@ -55,7 +55,7 @@ public class AggregateOperator {
                     resultSet.add(new ArrayList<>(values).get(0));
                     break;
             }
-            GraphUtils.setCollection(edge.concat(":").concat(key), resultSet);
+            GraphUtils.addAll(edge.concat(":").concat(key), resultSet);
         }
 
         Instant finish = Instant.now();

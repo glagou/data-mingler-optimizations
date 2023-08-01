@@ -36,7 +36,7 @@ public class FilterOperator {
                     System.out.println(e.getMessage());
                 }
             }
-            GraphUtils.setCollection(edge+":"+key,newValues);
+            GraphUtils.addAll(edge+":"+key,newValues);
         }
 
         Instant finish = Instant.now();
