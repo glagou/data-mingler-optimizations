@@ -3,7 +3,7 @@ package gr.aueb.data_mingler_optimizations.util;
 import gr.aueb.data_mingler_optimizations.QueryEvaluation;
 import gr.aueb.data_mingler_optimizations.enumerator.KeysMode;
 import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
-import gr.aueb.data_mingler_optimizations.graph.GraphManagerSingleton;
+import gr.aueb.data_mingler_optimizations.singleton.GraphManagerSingleton;
 
 import java.util.*;
 
@@ -43,11 +43,6 @@ public class GraphUtils {
 
     public static Collection<String> getElements(String edge) {
         return GRAPH.get(edge);
-    }
-
-    public static int getNumberOfElementsWithHyphen(String rootNode, String childNode) {
-        String key = createGraphKeyWithHyphen(rootNode, childNode);
-        return GRAPH.get(key) != null ? GRAPH.get(key).size() : 0;
     }
 
     public static void setCollection(String key, Collection<String> values) {

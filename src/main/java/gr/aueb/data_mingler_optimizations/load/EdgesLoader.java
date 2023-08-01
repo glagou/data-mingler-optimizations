@@ -30,7 +30,6 @@ public class EdgesLoader {
     private static final AuthToken NEO4J_AUTH_TOKEN = AuthTokens.basic("neo4j", "12345678");
     private static final String PATH_TO_DATASOURCES_XML = "C:\\Users\\User\\Desktop\\Development" +
             "\\data-mingler-optimizations\\src\\main\\resources\\xml_files\\datasources.xml";
-    private static final DbConnectionPool CONNECTION_POOL = new DbConnectionPool();
 
     private static Driver neo4jDriver;
     private static XPath xpath;
@@ -300,16 +299,11 @@ public class EdgesLoader {
                 });
     }
 
-    private static void closeConnectionPool() {
-        CONNECTION_POOL.closeConnections();
-    }
-
     public static void main(String[] args) {
         validateCmdArguments(args);
         initializeDocumentAndXpath();
         initializeDriver();
         loadEdges(args);
-        closeConnectionPool();
     }
 
 }

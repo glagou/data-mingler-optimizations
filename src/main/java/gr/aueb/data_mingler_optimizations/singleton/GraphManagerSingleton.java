@@ -1,4 +1,4 @@
-package gr.aueb.data_mingler_optimizations.graph;
+package gr.aueb.data_mingler_optimizations.singleton;
 
 import java.util.Collection;
 import java.util.HashMap;
