@@ -47,7 +47,7 @@ import java.util.*;
  */
 public class QueryEvaluation {
 
-    private static final String PATH_TO_EXCEL = "c:\\Program Files (x86)\\Microsoft Office\\Office12\\excel.exe";
+    private static final String PATH_TO_EXCEL = "\"C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE\"";
 
     private static final Map<String, List<String>> NODE_TO_CHILDREN_NODES = new HashMap<>();
     private static final Map<String, String> DVM_NODES_TO_LABELS = new HashMap<>();
@@ -182,7 +182,6 @@ public class QueryEvaluation {
 
     }
 
-    @SuppressWarnings("all")
     private static void evaluateChild(String rootNode, String childNode) {
         System.out.println("------ Evaluating Node: " + childNode + "(root:" + rootNode + ")");
         List<String> childrenOfChildNode = NODE_TO_CHILDREN_NODES.get(childNode);
@@ -191,8 +190,6 @@ public class QueryEvaluation {
                 evaluateChild(childNode, childOfChildNode);
                 OperatorUtils.executeTransformationOnEdge(childNode, childOfChildNode);
             });
-
-            String childOfChildNode = StringConstant.CHILD_OF_PREFIX.getValue().concat(childNode);
 
             StringBuilder allChildNodes = new StringBuilder();
             childrenOfChildNode.forEach(childOfChildNodeIter -> {
@@ -210,6 +207,7 @@ public class QueryEvaluation {
             });
 
             String theta = THETAS_ON_INTERNAL_NODES.get(childNode);
+            String childOfChildNode = StringConstant.CHILD_OF_PREFIX.getValue().concat(childNode);
             OperatorUtils.executeThetaCombine(childNode, childOfChildNode, allChildNodes.toString(),
                     outputChildNodes.toString(), theta);
             OperatorUtils.executeRollupEdges(rootNode, childNode, childOfChildNode);
@@ -228,7 +226,7 @@ public class QueryEvaluation {
     private static List<String> initializeOutputChildNodes() {
         List<String> outputChildNodes = new ArrayList<>();
         childNodes.forEach(childNode -> {
-            if (OUTPUTS.get(childNode).equals(Output.YES.getValue())) {
+            if (OUTPUTS.get(childNode).equalsIgnoreCase(Output.YES.getValue())) {
                 outputChildNodes.add(childNode);
             }
         });
@@ -250,7 +248,7 @@ public class QueryEvaluation {
             for (String childNode : outputChildNodes) {
                 out.print(",\"");
                 String edge = rootNode + "-" + childNode + ":" + key;
-                List<String> values = (List<String>) GraphUtils.getElements(edge);
+                Collection<String> values = GraphUtils.getElements(edge);
                 boolean started = false;
                 for (String value : values) {
                     if (started)
@@ -269,8 +267,11 @@ public class QueryEvaluation {
     }
 
     private static void openWithExcelIfNeeded(String outFilename) throws IOException {
-        if (outputType.equals(OutputType.EXCEL)) {
-            Runtime.getRuntime().exec(PATH_TO_EXCEL + " " + outFilename);
+        if (outputType == OutputType.EXCEL) {
+            String absoluteFilePath = new File(outFilename).getAbsolutePath();
+            ProcessBuilder processBuilder = new ProcessBuilder(PATH_TO_EXCEL + " " + "\""
+                    + absoluteFilePath + "\"");
+            processBuilder.start();
         }
     }
 

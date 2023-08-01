@@ -28,10 +28,10 @@ public class GraphUtils {
     }
 
     public static Collection<String> combineKeys(String rootNode, List<String> childNodes) {
-        String graphKey = createGraphKeyWithHyphen(rootNode, childNodes.get(0));
-        Collection<String> keys = GRAPH.get(graphKey);
+        String graphKey = rootNode + "-" + childNodes.get(0);
+        Set<String> keys = (Set<String>) GRAPH.get(graphKey);
         childNodes.forEach(childNode -> {
-            String childNodeGraphKey = createGraphKeyWithHyphen(rootNode, childNode);
+            String childNodeGraphKey = rootNode + "-" + childNode;
             if (QueryEvaluation.getKeysMode() == KeysMode.ALL) {
                 keys.addAll(GRAPH.get(childNodeGraphKey));
             } else {
