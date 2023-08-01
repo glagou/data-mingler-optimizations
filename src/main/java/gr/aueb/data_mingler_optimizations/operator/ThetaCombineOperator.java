@@ -66,7 +66,7 @@ public class ThetaCombineOperator {
                         String nextEdge = rootNode + '-' + childNode + ':' + key;
                         Collection<String> elements = GraphUtils.getElements(nextEdge);
                         List<String> values = new ArrayList<>(elements);
-                        GraphUtils.putValue(newEdge + ':' + key, values);
+                        GraphUtils.setCollection(newEdge + ':' + key, values);
                     }
                 } else {
                     GraphUtils.addValueToCollection(newEdge + ':' + key, key);

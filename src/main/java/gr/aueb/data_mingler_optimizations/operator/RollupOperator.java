@@ -23,7 +23,7 @@ public class RollupOperator {
             GraphUtils.removeElement(edge1 + ":" + key);
             for (String value : values) {
                 List<String> values2 = new ArrayList<>(GraphUtils.getElements(edge2 + ":" + value));
-                GraphUtils.putValue(edge1 + ":" + key, values2);
+                GraphUtils.setCollection(edge1 + ":" + key, values2);
             }
         }
 

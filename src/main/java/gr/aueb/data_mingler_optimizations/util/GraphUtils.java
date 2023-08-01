@@ -52,7 +52,7 @@ public class GraphUtils {
         return GRAPH.get(key) != null ? GRAPH.get(key).size() : 0;
     }
 
-    public static void putValue(String key, Collection<String> value) {
+    public static void setCollection(String key, Collection<String> value) {
         GRAPH.put(key, value);
     }
 
