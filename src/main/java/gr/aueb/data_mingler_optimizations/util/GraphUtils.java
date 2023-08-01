@@ -1,7 +1,7 @@
 package gr.aueb.data_mingler_optimizations.util;
 
 import gr.aueb.data_mingler_optimizations.QueryEvaluation;
-import gr.aueb.data_mingler_optimizations.enumerator.KeyMode;
+import gr.aueb.data_mingler_optimizations.enumerator.KeysMode;
 import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
 import gr.aueb.data_mingler_optimizations.graph.GraphManagerSingleton;
 
@@ -12,9 +12,7 @@ public class GraphUtils {
     private static final Map<String, Collection<String>> GRAPH = GraphManagerSingleton.getGraph();
 
     private static String createGraphKeyWithHyphen(String rootNode, String childNode) {
-        return rootNode
-                .concat(StringConstant.HYPHEN.getValue())
-                .concat(childNode);
+        return rootNode.concat(StringConstant.HYPHEN.getValue()).concat(childNode);
     }
 
     public static void removeEdge(String rootNode, String childNode) {
@@ -34,7 +32,7 @@ public class GraphUtils {
         Collection<String> keys = GRAPH.get(graphKey);
         childNodes.forEach(childNode -> {
             String childNodeGraphKey = createGraphKeyWithHyphen(rootNode, childNode);
-            if (QueryEvaluation.getKeysMode() == KeyMode.ALL) {
+            if (QueryEvaluation.getKeysMode() == KeysMode.ALL) {
                 keys.addAll(GRAPH.get(childNodeGraphKey));
             } else {
                 keys.retainAll(GRAPH.get(childNodeGraphKey));

@@ -37,15 +37,14 @@ public class OperatorUtils {
         RollupOperator.run(rootNode, childNode, childChildNode);
     }
 
-    // TODO: Path to python can be directly retrieved from main program
     public static void executeTransformationOnEdge(String rootNode, String childNode) {
-        String[] transformationsToPerform = QueryEvaluation
-                .getNodeToTransformations()
+        String[] transformationsToPerform = QueryEvaluation.getNodeToTransformations()
                 .get(childNode)
                 .split(StringConstant.SEMI_COLON.getValue(), -1);
 
         if (transformationsToPerform.length > 0 && !transformationsToPerform[0].isEmpty()
                 && !transformationsToPerform[0].equalsIgnoreCase(StringConstant.NULL.getValue())) {
+
             Arrays.stream(transformationsToPerform)
                     .forEach(transformation -> {
                         String[] transformationArgs = transformation.split(StringConstant.COLON.getValue(), -1);
@@ -59,6 +58,7 @@ public class OperatorUtils {
                             callMapOperator(rootNode, childNode, operatorParameters);
                         }
                     });
+
         }
 
     }

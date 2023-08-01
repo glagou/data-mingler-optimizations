@@ -1,6 +1,6 @@
 package gr.aueb.data_mingler_optimizations;
 
-import gr.aueb.data_mingler_optimizations.enumerator.KeyMode;
+import gr.aueb.data_mingler_optimizations.enumerator.KeysMode;
 import gr.aueb.data_mingler_optimizations.enumerator.Output;
 import gr.aueb.data_mingler_optimizations.enumerator.OutputType;
 import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
@@ -41,7 +41,7 @@ import java.util.*;
  *     <li>queryFilename - {@link String}</li>
  *     <li>outputType - {@link OutputType} (output always goes to a csv file named $rootNode+$timestamp ("none").
  *     If outputType is set to "excel" it invokes excel to present it)</li>
- *     <li>keysMode - {@link KeyMode}</li>
+ *     <li>keysMode - {@link KeysMode}</li>
  * </ul>
  * <br>
  */
@@ -58,7 +58,7 @@ public class QueryEvaluation {
 
     private static String queryFilename;
     private static OutputType outputType;
-    private static KeyMode keysMode;
+    private static KeysMode keysMode;
     private static Document document;
     private static XPath xpath;
     private static String rootNode;
@@ -73,7 +73,7 @@ public class QueryEvaluation {
     private static void initializeValuesFromCmdArguments(String[] args) {
         queryFilename = args[0];
         outputType = OutputType.valueOf(args[1].toUpperCase());
-        keysMode = KeyMode.valueOf(args[2].toUpperCase());
+        keysMode = KeysMode.valueOf(args[2].toUpperCase());
     }
 
     private static void initializeDocumentAndXpath() {
@@ -150,12 +150,18 @@ public class QueryEvaluation {
         childNodes.forEach(childNode -> {
             String rootNodeDVM = DVM_NODES_TO_LABELS.get(rootNode);
             String childNodeDVM = DVM_NODES_TO_LABELS.get(childNode);
+            System.out.println("*** Materializing: " + rootNode + "(" + rootNodeDVM + ")->" + childNode +
+                    "(" + childNodeDVM + ")");
 
-            if (GraphUtils.getNumberOfElementsWithHyphen(rootNode, childNode) == 0) {
+            String key = rootNode + "-" + childNode;
+            if (GraphUtils.getElements(key) == null || GraphUtils.getElements(key).size() == 0) {
+                System.out.println("Loading edge from data source: " + key);
                 LOAD_EDGES_CMD_ARGS.add(rootNodeDVM);
                 LOAD_EDGES_CMD_ARGS.add(childNodeDVM);
                 LOAD_EDGES_CMD_ARGS.add(rootNode);
                 LOAD_EDGES_CMD_ARGS.add(childNode);
+            } else {
+                System.out.println("Edge: " + key + " is already materialized in system");
             }
 
             List<String> childrenOfChildNode = NODE_TO_CHILDREN_NODES.get(childNode);
@@ -171,13 +177,14 @@ public class QueryEvaluation {
         try {
             EdgesLoader.main(cmdArgs);
         } catch (Exception e) {
-            throw new LoadEdgesExecutionFailedException(rootNode);
+            throw new LoadEdgesExecutionFailedException(rootNode, e);
         }
 
     }
 
     @SuppressWarnings("all")
     private static void evaluateChild(String rootNode, String childNode) {
+        System.out.println("------ Evaluating Node:" + childNode + "(root:" + rootNode + ")");
         List<String> childrenOfChildNode = NODE_TO_CHILDREN_NODES.get(childNode);
         if (childrenOfChildNode.size() > 0) {
             childrenOfChildNode.forEach(childOfChildNode -> {
@@ -185,9 +192,7 @@ public class QueryEvaluation {
                 OperatorUtils.executeTransformationOnEdge(childNode, childOfChildNode);
             });
 
-            String childOfChildNode = StringConstant.CHILD_OF_PREFIX
-                    .getValue()
-                    .concat(childNode);
+            String childOfChildNode = StringConstant.CHILD_OF_PREFIX.getValue().concat(childNode);
 
             StringBuilder allChildNodes = new StringBuilder();
             childrenOfChildNode.forEach(childOfChildNodeIter -> {
@@ -196,16 +201,15 @@ public class QueryEvaluation {
             });
 
             StringBuilder outputChildNodes = new StringBuilder();
-            childNodes.forEach(childNodeIter -> {
-                if (OUTPUTS.get(childNode).equals(Output.YES.getValue())) {
-                    outputChildNodes.append(childNodeIter);
+            childrenOfChildNode.forEach(childOfChildNodeIter -> {
+                if (OUTPUTS.get(childOfChildNodeIter).equalsIgnoreCase(Output.YES.getValue())) {
+                    outputChildNodes.append(childOfChildNodeIter);
                     outputChildNodes.append(StringConstant.COMMA.getValue());
                 }
 
             });
 
             String theta = THETAS_ON_INTERNAL_NODES.get(childNode);
-
             OperatorUtils.executeThetaCombine(childNode, childOfChildNode, allChildNodes.toString(),
                     outputChildNodes.toString(), theta);
             OperatorUtils.executeRollupEdges(rootNode, childNode, childOfChildNode);
@@ -215,7 +219,9 @@ public class QueryEvaluation {
     private static void evaluateChildAndExecuteTransformations() {
         childNodes.forEach(childNode -> {
             evaluateChild(rootNode, childNode);
+            System.out.println("Finished evaluating child: " + childNode);
             OperatorUtils.executeTransformationOnEdge(rootNode, childNode);
+            System.out.println("Finished transforming child: " + childNode);
         });
     }
 
@@ -280,6 +286,7 @@ public class QueryEvaluation {
         initializeRootNodeAndChildNodes();
         materializeEdge(rootNode, childNodes);
         loadEdges();
+        System.out.println("Finished loading edges");
         evaluateChildAndExecuteTransformations();
         List<String> outputChildNodes = initializeOutputChildNodes();
         Set<String> keys = (Set<String>) GraphUtils.combineKeys(rootNode, outputChildNodes);
@@ -291,7 +298,7 @@ public class QueryEvaluation {
         return NODE_TO_TRANSFORMATIONS;
     }
 
-    public static KeyMode getKeysMode() {
+    public static KeysMode getKeysMode() {
         return keysMode;
     }
 
