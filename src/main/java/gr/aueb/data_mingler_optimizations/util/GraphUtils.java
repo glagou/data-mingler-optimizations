@@ -1,6 +1,7 @@
 package gr.aueb.data_mingler_optimizations.util;
 
 import gr.aueb.data_mingler_optimizations.QueryEvaluation;
+import gr.aueb.data_mingler_optimizations.enumerator.GraphAdditionMethod;
 import gr.aueb.data_mingler_optimizations.enumerator.KeysMode;
 import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
 import gr.aueb.data_mingler_optimizations.singleton.GraphManagerSingleton;
@@ -59,10 +60,14 @@ public class GraphUtils {
         setCollection(key, initialCollection);
     }
 
-    public static void addValueToCollection(String key, String value) {
+    public static void addValueToCollection(String key, String value, GraphAdditionMethod graphAdditionMethod) {
         Collection<String> initialCollection = GRAPH.get(key);
         if (initialCollection == null) {
-            initialCollection = new HashSet<>();
+            if (graphAdditionMethod == GraphAdditionMethod.AS_SET) {
+                initialCollection = new HashSet<>();
+            } else {
+                initialCollection = new ArrayList<>();
+            }
         }
         initialCollection.add(value);
         GRAPH.put(key, initialCollection);

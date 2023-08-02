@@ -1,5 +1,6 @@
 package gr.aueb.data_mingler_optimizations.operator;
 
+import gr.aueb.data_mingler_optimizations.enumerator.GraphAdditionMethod;
 import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 import org.python.jsr223.PyScriptEngineFactory;
@@ -60,7 +61,7 @@ public class ThetaCombineOperator {
 
         for (String key : keys) {
             if (evaluateTheta(theta, key, rootNode, allChildNodes)) {
-                GraphUtils.addValueToCollection(newEdge, key);
+                GraphUtils.addValueToCollection(newEdge, key, GraphAdditionMethod.AS_SET);
                 if (hasOutput) {
                     for (String childNode : outputChildNodes) {
                         String nextEdge = rootNode + '-' + childNode + ':' + key;
@@ -69,7 +70,7 @@ public class ThetaCombineOperator {
                         GraphUtils.setCollection(newEdge + ':' + key, values);
                     }
                 } else {
-                    GraphUtils.addValueToCollection(newEdge + ':' + key, key);
+                    GraphUtils.addValueToCollection(newEdge + ':' + key, key, GraphAdditionMethod.AS_SET);
                 }
             }
         }
