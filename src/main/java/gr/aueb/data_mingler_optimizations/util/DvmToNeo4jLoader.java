@@ -63,11 +63,16 @@ public class DvmToNeo4jLoader {
         int rows = 1;
         while (!xpath.evaluate("/edges/edge[position()=" + rows + "]", doc).isEmpty()) {
 
-            String nodeA_name = xpath.evaluate("/edges/edge[position()=" + rows + "]/headnode/name", doc).trim();
-            String nodeA_description = xpath.evaluate("/edges/edge[position()=" + rows + "]/headnode/description", doc).trim();
-            String nodeB_name = xpath.evaluate("/edges/edge[position()=" + rows + "]/tailnode/name", doc).trim();
-            String nodeB_description = xpath.evaluate("/edges/edge[position()=" + rows + "]/tailnode/description", doc).trim();
-            String datasourceName = xpath.evaluate("/edges/edge[position()=" + rows + "]/datasource", doc).trim();
+            String nodeA_name = xpath.evaluate("/edges/edge[position()=" + rows + "]/headnode/name",
+                    doc).trim();
+            String nodeA_description = xpath.evaluate("/edges/edge[position()=" + rows + "]/headnode/description",
+                    doc).trim();
+            String nodeB_name = xpath.evaluate("/edges/edge[position()=" + rows + "]/tailnode/name",
+                    doc).trim();
+            String nodeB_description = xpath.evaluate("/edges/edge[position()=" + rows + "]/tailnode/description",
+                    doc).trim();
+            String datasourceName = xpath.evaluate("/edges/edge[position()=" + rows + "]/datasource",
+                    doc).trim();
             String queryString = xpath.evaluate("/edges/edge[position()=" + rows + "]/query", doc).trim();
             String pos1 = xpath.evaluate("/edges/edge[position()=" + rows + "]/key", doc).trim();
             String pos2 = xpath.evaluate("/edges/edge[position()=" + rows + "]/value", doc).trim();
