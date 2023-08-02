@@ -1,34 +1,30 @@
 package gr.aueb.data_mingler_optimizations.operator;
 
+import gr.aueb.data_mingler_optimizations.enumerator.GraphAdditionMethod;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 
 public class RollupOperator {
-    public static void run(String rootNode, String childNode, String childChildNode) {
-        Instant start = Instant.now();
 
+    public static void run(String rootNode, String childNode, String childOfChildNode) {
         String edge1 = rootNode + "-" + childNode;
-        String edge2 = childNode + "-" + childChildNode;
-
-        Set<String> keys = new HashSet<>(GraphUtils.getElements(edge1));
+        String edge2 = childNode + "-" + childOfChildNode;
+        Set<String> keys = (Set<String>) GraphUtils.getElements(edge1);
         for (String key : keys) {
-            List<String> values = new ArrayList<>(GraphUtils.getElements(edge1 + ":" + key));
-            GraphUtils.removeElement(edge1 + ":" + key);
+            String graphKey = edge1 + ":" + key;
+            List<String> values = (List<String>) GraphUtils.getElements(graphKey);
+            GraphUtils.removeElement(graphKey);
             for (String value : values) {
-                List<String> values2 = new ArrayList<>(GraphUtils.getElements(edge2 + ":" + value));
-                GraphUtils.addAll(edge1 + ":" + key, values2);
+                String graphKey2 = edge2 + ":" + value;
+                List<String> values2 = (List<String>) GraphUtils.getElements(graphKey2);
+                for (String value2 : values2) {
+                    GraphUtils.addValueToCollection(graphKey, value2, GraphAdditionMethod.AS_LIST);
+                }
             }
         }
-
-        Instant finish = Instant.now();
-        long timeElapsed = Duration.between(start, finish).toMillis();
-        System.out.println(timeElapsed);
     }
+
 }
