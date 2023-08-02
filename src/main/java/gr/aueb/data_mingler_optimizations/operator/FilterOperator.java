@@ -1,46 +1,40 @@
 package gr.aueb.data_mingler_optimizations.operator;
 
+import gr.aueb.data_mingler_optimizations.enumerator.GraphAdditionMethod;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 import org.python.jsr223.PyScriptEngineFactory;
 
-import javax.script.*;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import java.util.Collection;
+import java.util.Set;
 
 public class FilterOperator {
+
     private static final ScriptEngineManager manager = new ScriptEngineManager();
 
     public static void run(String rootNode, String childNode, String expressionCL) {
         manager.registerEngineExtension("python", new PyScriptEngineFactory());
         ScriptEngine engine = manager.getEngineByName("python");
-        Instant start = Instant.now();
-        String expression = expressionCL.replace('$'+childNode+'$',"value");
 
+        String expression = expressionCL.replace('$' + childNode + '$', "Lvalue");
         String edge = rootNode + "-" + childNode;
         Set<String> keys = (Set<String>) GraphUtils.getElements(edge);
         for (String key : keys) {
+            String graphKey = edge + ":" + key;
             Collection<String> values = GraphUtils.getElements(edge);
-            GraphUtils.removeElement(edge.concat(":").concat(key));
-            List<String> newValues = new ArrayList<>();
+            GraphUtils.removeElement(graphKey);
             for (String value : values) {
                 try {
-                    Bindings bindings = new SimpleBindings();
-                    bindings.put("value", value);
-                    Object result = engine.eval(expression, bindings);
+                    Object result = engine.eval(expression);
                     if (result instanceof Boolean && (Boolean) result) {
-                        newValues.add(result.toString());
+                        GraphUtils.addValueToCollection(graphKey, value, GraphAdditionMethod.AS_LIST);
                     }
-
                 } catch (ScriptException e) {
-                    System.out.println(e.getMessage());
+                    throw new RuntimeException(e);
                 }
             }
-            GraphUtils.addAll(edge+":"+key,newValues);
         }
-
-        Instant finish = Instant.now();
-        long timeElapsed = Duration.between(start, finish).toMillis();
-        System.out.println(timeElapsed);
     }
 }
