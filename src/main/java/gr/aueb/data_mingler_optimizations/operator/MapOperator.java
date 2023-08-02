@@ -29,7 +29,7 @@ public class MapOperator {
                     Object result = engine.eval(functionInvocation, bindings);
                     GraphUtils.addValueToCollection(graphKey, String.valueOf(result), GraphAdditionMethod.AS_LIST);
                 } catch (ScriptException e) {
-                    System.out.println(e.getMessage());
+                    throw new RuntimeException(e);
                 }
             }
         }
