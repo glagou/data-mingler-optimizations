@@ -4,9 +4,7 @@ import gr.aueb.data_mingler_optimizations.enumerator.GraphAdditionMethod;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 import org.python.jsr223.PyScriptEngineFactory;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
+import javax.script.*;
 import java.util.Collection;
 import java.util.Set;
 
@@ -23,11 +21,13 @@ public class FilterOperator {
         Set<String> keys = (Set<String>) GraphUtils.getElements(edge);
         for (String key : keys) {
             String graphKey = edge + ":" + key;
-            Collection<String> values = GraphUtils.getElements(edge);
+            Collection<String> values = GraphUtils.getElements(graphKey);
             GraphUtils.removeElement(graphKey);
             for (String value : values) {
                 try {
-                    Object result = engine.eval(expression);
+                    Bindings bindings = new SimpleBindings();
+                    bindings.put("Lvalue", value);
+                    Object result = engine.eval(expression, bindings);
                     if (result instanceof Boolean && (Boolean) result) {
                         GraphUtils.addValueToCollection(graphKey, value, GraphAdditionMethod.AS_LIST);
                     }

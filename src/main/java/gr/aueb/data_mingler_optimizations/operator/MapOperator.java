@@ -1,14 +1,11 @@
 package gr.aueb.data_mingler_optimizations.operator;
 
+import gr.aueb.data_mingler_optimizations.enumerator.GraphAdditionMethod;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 import org.python.jsr223.PyScriptEngineFactory;
 
 import javax.script.*;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 public class MapOperator {
@@ -17,30 +14,24 @@ public class MapOperator {
     public static void run(String rootNode, String childNode, String functionInvocation) {
         manager.registerEngineExtension("python", new PyScriptEngineFactory());
         ScriptEngine engine = manager.getEngineByName("python");
-        Instant start = Instant.now();
 
-        String modifiedFnInvocation = functionInvocation.replace('$'+childNode+'$', "value");
         String edge = rootNode + "-" + childNode;
+        functionInvocation = functionInvocation.replace('$' + childNode + '$', "value");
         Set<String> keys = (Set<String>) GraphUtils.getElements(edge);
         for (String key : keys) {
-            Collection<String> values = GraphUtils.getElements(edge);
-            GraphUtils.removeElement(edge.concat(":").concat(key));
-            List<String> newValues = new ArrayList<>();
+            String graphKey = edge + ":" + key;
+            Collection<String> values = GraphUtils.getElements(graphKey);
+            GraphUtils.removeElement(graphKey);
             for (String value : values) {
                 try {
                     Bindings bindings = new SimpleBindings();
                     bindings.put("value", value);
-                    Object result = engine.eval(modifiedFnInvocation, bindings);
-                    newValues.add(result.toString());
+                    Object result = engine.eval(functionInvocation, bindings);
+                    GraphUtils.addValueToCollection(graphKey, String.valueOf(result), GraphAdditionMethod.AS_LIST);
                 } catch (ScriptException e) {
                     System.out.println(e.getMessage());
                 }
             }
-            GraphUtils.addAll(edge+":"+key,newValues);
         }
-
-        Instant finish = Instant.now();
-        long timeElapsed = Duration.between(start, finish).toMillis();
-        System.out.println(timeElapsed);
     }
 }
