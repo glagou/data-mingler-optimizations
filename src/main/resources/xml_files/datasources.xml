@@ -39,4 +39,21 @@
 			yes
 		</headings>
 	</datasource>
+	<datasource type="csv">
+		<id>
+			3
+		</id>
+		<name>
+			myCSV2
+		</name>
+		<path>
+			C:\Users\User\Desktop\Development\data-mingler-optimizations\src\main\resources\data\
+		</path>
+		<filename>
+			reviews.csv
+		</filename>		
+		<headings>
+			yes
+		</headings>
+	</datasource>
 </datasources>
