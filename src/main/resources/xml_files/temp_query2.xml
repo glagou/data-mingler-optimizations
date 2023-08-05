@@ -1,0 +1,83 @@
+<query>
+	<rootnode>
+		X000
+	</rootnode>
+	<node>
+		<label>
+			X000
+		</label>
+		<onnode>
+			user_id
+		</onnode>
+		<children>
+			X001, X004
+		</children>
+		<transformations />
+		<theta />
+		<output />
+	</node>
+	<node>
+		<label>
+			X001
+		</label>
+		<onnode>
+			product_id
+		</onnode>
+		<children>
+			X002
+		</children>
+		<transformations>
+			aggregate:sum
+		</transformations>
+		<theta />
+		<output>
+			yes
+		</output>
+	</node>
+	<node>
+		<label>
+			X002
+		</label>
+		<onnode>
+			price
+		</onnode>
+		<children />
+		<transformations />
+		<theta />
+		<output>
+			yes
+		</output>
+	</node>
+	<node>
+		<label>
+			X003
+		</label>
+		<onnode>
+			product_id
+		</onnode>
+		<children>
+			X004
+		</children>
+		<transformations>
+			map:python,,len($X004$);aggregate:sum
+		</transformations>
+		<theta />
+		<output>
+			yes
+		</output>
+	</node>
+	<node>
+		<label>
+			X004
+		</label>
+		<onnode>
+			review
+		</onnode>
+		<children />
+		<transformations />
+		<theta />
+		<output>
+			yes
+		</output>
+	</node>
+</query>
