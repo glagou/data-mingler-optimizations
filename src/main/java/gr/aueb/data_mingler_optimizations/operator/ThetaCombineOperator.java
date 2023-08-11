@@ -17,6 +17,9 @@ public class ThetaCombineOperator {
     private static boolean evaluateTheta(String theta, String key, String rootNode, String[] allChildNodes) {
         if (theta.equals("True")) return true;
         try {
+            if (engine == null) {
+                engine = manager.getEngineByName("python");
+            }
             for (String childNode : allChildNodes) {
                 String element = ((List<String>) GraphUtils.getElements(rootNode + '-' + childNode + ':' + key)).get(0);
                 theta = theta.replace('$' + childNode + '$', element);
@@ -34,7 +37,6 @@ public class ThetaCombineOperator {
     public static void run(String rootNode, String newChildNode, String allChildNodesCL, String outputChildNodesCL,
                            String thetaCL) {
         manager.registerEngineExtension("python", new PyScriptEngineFactory());
-        engine = manager.getEngineByName("python");
         Instant start = Instant.now();
 
         boolean hasOutput = !outputChildNodesCL.isEmpty();
