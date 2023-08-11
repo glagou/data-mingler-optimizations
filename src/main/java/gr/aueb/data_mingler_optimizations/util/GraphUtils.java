@@ -47,6 +47,10 @@ public class GraphUtils {
         GRAPH.put(key, initialCollection);
     }
 
+    public static void setCollection(String key, Collection<String> values) {
+        GRAPH.put(key, values);
+    }
+
     public static void removeElement(String key) {
         GRAPH.remove(key);
     }
