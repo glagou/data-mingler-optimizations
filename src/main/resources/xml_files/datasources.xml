@@ -10,7 +10,7 @@
 			,
 		</delimiter>
 		<path>
-			C:\Users\User\Desktop\Development\data-mingler-optimizations\src\main\resources\data\
+			C:\Users\user\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
 		</path>
 		<filename>
 			user_product_data.csv
@@ -27,7 +27,7 @@
 			myExcel
 		</name>
 		<path>
-			C:\Users\User\Desktop\Development\data-mingler-optimizations\src\main\resources\data\
+			C:\Users\user\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
 		</path>
 		<filename>
 			product_info.xlsx
@@ -35,23 +35,6 @@
 		<sheet>
 			Sheet1
 		</sheet>
-		<headings>
-			yes
-		</headings>
-	</datasource>
-	<datasource type="csv">
-		<id>
-			3
-		</id>
-		<name>
-			myCSV2
-		</name>
-		<path>
-			C:\Users\User\Desktop\Development\data-mingler-optimizations\src\main\resources\data\
-		</path>
-		<filename>
-			reviews.csv
-		</filename>		
 		<headings>
 			yes
 		</headings>
