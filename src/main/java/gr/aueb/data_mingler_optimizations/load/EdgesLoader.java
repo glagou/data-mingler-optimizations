@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
+import static org.neo4j.driver.Values.parameters;
+
 public class EdgesLoader {
 
     private static final String BOLT_URI = "bolt://localhost:7687";
@@ -191,14 +193,11 @@ public class EdgesLoader {
     private static void loadEdgesForExcel(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
                                           String aliasA, String aliasB) throws XPathExpressionException {
 
-        String fileName = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/filename",
-                document).trim();
-        String path = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/path",
-                document).trim();
-        String sheetName = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/sheet",
-                document).trim();
-        boolean headings = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/headings",
-                document).trim().equals("yes");
+        String fileName = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/filename", document).trim();
+        String path = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/path", document).trim();
+        String sheetName = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/sheet", document).trim();
+        boolean headings = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/headings", document).trim().equals("yes");
+
 
 
         try {
@@ -290,11 +289,10 @@ public class EdgesLoader {
         }
     }
 
-    private static void loadEdges(String[] args) {
-        IntStream.range(0, args.length)
-                .filter(i -> i % 4 == 0)
+    public static void loadEdges(String[] args) {
+        IntStream.iterate(0, i -> i < args.length, i -> i + 4)
+                .parallel()
                 .forEach(i -> {
-
                     String nodeA = args[i];
                     String nodeB = args[i + 1];
                     String aliasA = args[i + 2].isEmpty() ? nodeA : args[i + 2];
@@ -302,9 +300,9 @@ public class EdgesLoader {
 
                     try (Session session = neo4jDriver.session()) {
                         try {
-                            Result result = session.run("MATCH (a:attribute{name:'" + nodeA + "'})-[r:has]->(b:attribute{name:'"
-                                    + nodeB + "'}) RETURN r.datasource as datasource, r.query as query, r.key as key, " +
-                                    "r.value as value");
+                            Result result = session.run("MATCH (a:attribute{name:$nodeA})-[r:has]->(b:attribute{name:$nodeB}) RETURN r.datasource as datasource, r.query as query, r.key as key, r.value as value",
+                                    parameters("nodeA", nodeA, "nodeB", nodeB));
+
                             if (!result.hasNext()) {
                                 throw new NoEdgeExistsException(nodeA, nodeB);
                             }
@@ -346,6 +344,8 @@ public class EdgesLoader {
                     }
                 });
     }
+
+
 
     public static void main(String[] args) {
         validateCmdArguments(args);

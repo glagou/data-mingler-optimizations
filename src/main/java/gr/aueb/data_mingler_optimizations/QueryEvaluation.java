@@ -26,6 +26,9 @@ import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import java.util.List;
+
+
 /**
  * Evaluates a query (Q) defined over a DVM (Data Virtual Machine).
  * <br>
@@ -172,15 +175,14 @@ public class QueryEvaluation {
     }
 
     private static void loadEdges() {
-        String[] cmdArgs = new String[LOAD_EDGES_CMD_ARGS.size()];
-        LOAD_EDGES_CMD_ARGS.toArray(cmdArgs);
         try {
+            String[] cmdArgs = LOAD_EDGES_CMD_ARGS.toArray(new String[0]);
             EdgesLoader.main(cmdArgs);
         } catch (Exception e) {
             throw new LoadEdgesExecutionFailedException(rootNode, e);
         }
-
     }
+
 
     private static void evaluateChild(String rootNode, String childNode) {
         System.out.println("------ Evaluating Node: " + childNode + "(root:" + rootNode + ")");
@@ -215,13 +217,15 @@ public class QueryEvaluation {
     }
 
     private static void evaluateChildAndExecuteTransformations() {
-        childNodes.forEach(childNode -> {
+        // Create a parallel stream to evaluate and transform child nodes concurrently
+        childNodes.parallelStream().forEach(childNode -> {
             evaluateChild(rootNode, childNode);
             System.out.println("Finished evaluating child: " + childNode);
             OperatorUtils.executeTransformationOnEdge(rootNode, childNode);
             System.out.println("Finished transforming child: " + childNode);
         });
     }
+
 
     private static List<String> initializeOutputChildNodes() {
         List<String> outputChildNodes = new ArrayList<>();
