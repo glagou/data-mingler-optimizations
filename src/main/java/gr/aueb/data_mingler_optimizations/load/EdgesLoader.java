@@ -301,22 +301,20 @@ public class EdgesLoader {
     }
 
     public static void loadEdges(String[] args) {
-        IntStream.iterate(0, i -> i < args.length, i -> i + 4)
-                .parallel()
-                .forEach(i -> {
-                    String nodeA = args[i];
-                    String nodeB = args[i + 1];
-                    String aliasA = args[i + 2].isEmpty() ? nodeA : args[i + 2];
-                    String aliasB = args[i + 3].isEmpty() ? nodeB : args[i + 3];
+        try (Session session = neo4jDriver.session()) {
+            String query = "MATCH (a:attribute{name:$nodeA})-[r:has]->(b:attribute{name:$nodeB}) " +
+                    "RETURN r.datasource as datasource, r.query as query, r.key as key, r.value as value";
 
-                    try (Session session = neo4jDriver.session()) {
+            IntStream.iterate(0, i -> i < args.length, i -> i + 4)
+                    .parallel()
+                    .forEach(i -> {
+                        String nodeA = args[i];
+                        String nodeB = args[i + 1];
+                        String aliasA = args[i + 2].isEmpty() ? nodeA : args[i + 2];
+                        String aliasB = args[i + 3].isEmpty() ? nodeB : args[i + 3];
+
                         try {
-                            Result result = session.run("MATCH (a:attribute{name:$nodeA})-[r:has]->(b:attribute{name:$nodeB}) RETURN r.datasource as datasource, r.query as query, r.key as key, r.value as value",
-                                    parameters("nodeA", nodeA, "nodeB", nodeB));
-
-                            if (!result.hasNext()) {
-                                throw new NoEdgeExistsException(nodeA, nodeB);
-                            }
+                            Result result = session.run(query, parameters("nodeA", nodeA, "nodeB", nodeB));
 
                             while (result.hasNext()) {
                                 Record record = result.next();
@@ -324,23 +322,22 @@ public class EdgesLoader {
                                 String queryString = record.get("query").asString();
                                 String[] keyPosStr = record.get("key").asString().split(",", -1);
                                 String[] valuePosStr = record.get("value").asString().split(",", -1);
+
                                 List<Integer> keyPositions = new ArrayList<>();
                                 List<Integer> valuePositions = new ArrayList<>();
+
                                 for (String s : keyPosStr) {
                                     keyPositions.add(Integer.parseInt(s));
                                 }
                                 for (String s : valuePosStr) {
                                     valuePositions.add(Integer.parseInt(s));
                                 }
-                                System.out.println("Key Positions: " + keyPositions);
-                                System.out.println("Value Positions: " + valuePositions);
 
                                 int rows = validateDatasourceExists(datasource, nodeA, nodeB);
                                 DatasourceType datasourceType = findDatasourceType(rows);
 
                                 if (datasourceType == DatasourceType.DB) {
-                                    loadEdgesForDatabase(rows, keyPositions, valuePositions, queryString, aliasA,
-                                            aliasB);
+                                    loadEdgesForDatabase(rows, keyPositions, valuePositions, queryString, aliasA, aliasB);
                                 } else if (datasourceType == DatasourceType.CSV) {
                                     loadEdgesForCsv(rows, keyPositions, valuePositions, aliasA, aliasB);
                                 } else if (datasourceType == DatasourceType.EXCEL) {
@@ -348,13 +345,17 @@ public class EdgesLoader {
                                 } else {
                                     loadEdgesForProcess(rows, keyPositions, valuePositions, aliasA, aliasB);
                                 }
+
+                                keyPositions.clear();
+                                valuePositions.clear();
                             }
                         } catch (XPathExpressionException e) {
                             throw new RuntimeException(e);
                         }
-                    }
-                });
+                    });
+        }
     }
+
 
 
 
