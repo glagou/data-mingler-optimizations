@@ -8,8 +8,6 @@ import gr.aueb.data_mingler_optimizations.exception.InvalidNumberOfCmdArgumentsE
 import gr.aueb.data_mingler_optimizations.exception.NoEdgeExistsException;
 import gr.aueb.data_mingler_optimizations.exception.UnableToInitializeDocumentAndXpathException;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.*;
@@ -30,6 +28,14 @@ import java.util.Objects;
 import java.util.stream.IntStream;
 
 import static org.neo4j.driver.Values.parameters;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.stream.Stream;
+import org.dhatim.fastexcel.reader.ReadableWorkbook;
+import org.dhatim.fastexcel.reader.Row;
+
 
 public class EdgesLoader {
 
@@ -198,44 +204,49 @@ public class EdgesLoader {
         String sheetName = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/sheet", document).trim();
         boolean headings = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/headings", document).trim().equals("yes");
 
+        try (InputStream is = new FileInputStream(path + fileName);
+             ReadableWorkbook wb = new ReadableWorkbook(is)) {
 
 
-        try {
-            Workbook xlWBook;
-            Sheet xlSheet;
-            Row xlRow;
-            Cell xlCell;
-            DataFormatter formatter = new DataFormatter();
-            FileInputStream xlFile = new FileInputStream(path + fileName);
-            xlWBook = new XSSFWorkbook(xlFile);
-            xlSheet = xlWBook.getSheet(sheetName);
-            int noOfRows = xlSheet.getPhysicalNumberOfRows();
+            wb.getSheets().forEach(sheet -> {
+                try (Stream<Row> rows_excel = sheet.openStream()) {
 
-            for (int r = 0; r < noOfRows; r++) {
-                if (r == 0 && headings) continue;
-                xlRow = xlSheet.getRow(r);
+                    int startRow = headings ? 1 : 0;
+                    rows_excel.skip(startRow).forEach(r -> {
+                        StringBuilder key = new StringBuilder();
+                        for (int j : keyPositions) {
+                            String str;
+                            str = r.getCellAsString(0).orElse(null);
 
-                StringBuilder key = new StringBuilder();
-                for (int j = 0; j < keyPositions.size(); j++) {
-                    xlCell = xlRow.getCell(keyPositions.get(j) - 1);
-                    if (j != 0) key.append(":");
-                    key.append(formatter.formatCellValue(xlCell));
+                            if (!key.isEmpty()) key.append(":");
+                            key.append(str);
+                        }
+
+                        StringBuilder value = new StringBuilder();
+                        for (int j : valuePositions) {
+                            String str;
+                            str = String.valueOf(r.getCellAsNumber(1).orElse(null));
+
+                            if (!value.isEmpty()) value.append(":");
+                            value.append(str);
+                        }
+
+                        GraphUtils.addValueToCollection(aliasA + "-" + aliasB + ":" + key, value.toString(),
+                                GraphAdditionMethod.AS_LIST);
+                        GraphUtils.addValueToCollection(aliasA + "-" + aliasB, key.toString(), GraphAdditionMethod.AS_SET);
+                    });
+
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                StringBuilder value = new StringBuilder();
-                for (int j = 0; j < valuePositions.size(); j++) {
-                    xlCell = xlRow.getCell(valuePositions.get(j) - 1);
-                    if (j != 0) value.append(":");
-                    value.append(formatter.formatCellValue(xlCell));
-                }
+            });
 
-                GraphUtils.addValueToCollection(aliasA + "-" + aliasB + ":" + key, value.toString(),
-                        GraphAdditionMethod.AS_LIST);
-                GraphUtils.addValueToCollection(aliasA + "-" + aliasB, key.toString(), GraphAdditionMethod.AS_SET);
-            }
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
+
 
     private static void loadEdgesForProcess(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
                                             String aliasA, String aliasB) throws XPathExpressionException {
@@ -352,6 +363,7 @@ public class EdgesLoader {
         initializeDocumentAndXpath();
         initializeDriver();
         loadEdges(args);
+        neo4jDriver.close();
     }
 
 }
