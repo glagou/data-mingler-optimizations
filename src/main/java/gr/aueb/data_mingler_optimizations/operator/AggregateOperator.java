@@ -81,32 +81,34 @@ public class AggregateOperator {
 
     private static void calculateSum(String edge, Set<String> keys) {
         for (String key : keys) {
-            String result;
             String graphKey = edge + ":" + key;
             List<String> values = (List<String>) GraphUtils.getElements(graphKey);
-            if (values.size() != 0) {
-                GraphUtils.removeElement(graphKey);
-                boolean foundAtLeastOne = false;
+
+            if (!values.isEmpty() && isNumericList(values)) {
                 double sum = 0;
                 for (String value : values) {
-                    if (!isNumericList(values)) {
-                        continue;
-                    }
                     double val = Double.parseDouble(value);
-                    foundAtLeastOne = true;
-                    sum = sum + val;
+                    sum += val;
                 }
-                if (foundAtLeastOne) {
-                    result = String.valueOf(sum);
-                    GraphUtils.addValueToCollection(graphKey, result, GraphAdditionMethod.AS_LIST);
-                } else {
-                    GraphUtils.addValueToCollection(graphKey, StringConstant.NULL.getValue(), GraphAdditionMethod.AS_LIST);
-                }
+                GraphUtils.removeElement(graphKey);
+                GraphUtils.addValueToCollection(graphKey, String.valueOf(sum), GraphAdditionMethod.AS_LIST);
             } else {
                 GraphUtils.addValueToCollection(graphKey, StringConstant.NULL.getValue(), GraphAdditionMethod.AS_LIST);
             }
         }
     }
+
+
+
+    private static boolean isNumeric(String str) {
+        try {
+            Double.parseDouble(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
 
     private static void calculateAverage(String edge, Set<String> keys) {
         for (String key : keys) {
