@@ -5,6 +5,7 @@ public enum DatasourceType {
     DB,
     CSV,
     EXCEL,
-    PROCESS
+    PROCESS,
+    XML
 
 }

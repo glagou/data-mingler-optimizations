@@ -11,7 +11,7 @@ import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.*;
-import org.w3c.dom.Document;
+import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -35,6 +35,8 @@ import java.io.InputStream;
 import java.util.stream.Stream;
 import org.dhatim.fastexcel.reader.ReadableWorkbook;
 import org.dhatim.fastexcel.reader.Row;
+
+
 
 
 public class EdgesLoader {
@@ -196,6 +198,76 @@ public class EdgesLoader {
         }
     }
 
+
+    private static void loadEdgesForXML(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
+                                        String aliasA, String aliasB) throws XPathExpressionException {
+        String fileName = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/filename",
+                document).trim();
+        String path = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/path",
+                document).trim();
+        boolean headings = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/headings",
+                document).trim().equals("yes");
+        String delimiter = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/delimiter",
+                document).trim();
+
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+
+            // Load the XML file
+            File xmlFile = new File(path + fileName);
+            if (!xmlFile.exists()) {
+                throw new RuntimeException("XML file does not exist at: " + xmlFile.getAbsolutePath());
+            }
+
+            Document document = builder.parse(xmlFile);
+
+            NodeList reviewNodes = document.getElementsByTagName("review");
+            for (int i = 0; i < reviewNodes.getLength(); i++) {
+                Node reviewNode = reviewNodes.item(i);
+
+                if (reviewNode.getNodeType() != Node.ELEMENT_NODE) {
+                    continue;  // Skip non-element nodes
+                }
+
+                Element reviewElement = (Element) reviewNode;
+                String index = reviewElement.getElementsByTagName("index").item(0).getTextContent();
+                String reviewText = reviewElement.getElementsByTagName("review_text").item(0).getTextContent();
+
+                StringBuilder key = new StringBuilder();
+                for (int j : keyPositions) {
+                    if (key.length() > 0) {
+                        key.append(":");
+                    }
+                    key.append(index);
+                }
+
+                StringBuilder value = new StringBuilder();
+                for (int j : valuePositions) {
+                    if (value.length() > 0) {
+                        value.append(":");
+                    }
+                    value.append(reviewText);
+                }
+
+                if (key.toString().isEmpty() || value.toString().isEmpty()) {
+                    System.err.println("Skipping row with empty key or value: Index " + index);
+                    continue;
+                }
+
+                GraphUtils.addValueToCollection(aliasA + "-" + aliasB + ":" + key, value.toString(),
+                        GraphAdditionMethod.AS_LIST);
+                GraphUtils.addValueToCollection(aliasA + "-" + aliasB, key.toString(), GraphAdditionMethod.AS_SET);
+            }
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            throw new RuntimeException("Error parsing XML file", e);
+        }
+    }
+
+
+
+
+
     private static void loadEdgesForExcel(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
                                           String aliasA, String aliasB) throws XPathExpressionException {
 
@@ -342,7 +414,9 @@ public class EdgesLoader {
                                     loadEdgesForCsv(rows, keyPositions, valuePositions, aliasA, aliasB);
                                 } else if (datasourceType == DatasourceType.EXCEL) {
                                     loadEdgesForExcel(rows, keyPositions, valuePositions, aliasA, aliasB);
-                                } else {
+                                } else if (datasourceType == DatasourceType.XML) {
+                                    loadEdgesForXML(rows, keyPositions, valuePositions, aliasA, aliasB);
+                                }else {
                                     loadEdgesForProcess(rows, keyPositions, valuePositions, aliasA, aliasB);
                                 }
 
