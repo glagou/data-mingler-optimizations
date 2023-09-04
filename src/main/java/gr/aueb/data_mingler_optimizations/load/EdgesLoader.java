@@ -232,17 +232,17 @@ public class EdgesLoader {
                 switch (event) {
                     case XMLStreamConstants.START_ELEMENT -> {
                         String elementName = reader.getLocalName();
-                        if (elementName.equals("review")) {
+                        if (!elementName.equals(nodeA) & !elementName.equals(nodeB)) {
                             keyBuilder.setLength(0);
                             valueBuilder.setLength(0);
                         } else if (elementName.equals(nodeA)) {
                             index = reader.getElementText();
-                        } else if (elementName.equals(nodeB)) {
+                        } else {
                             reviewText = reader.getElementText();
                         }
                     }
                     case XMLStreamConstants.END_ELEMENT -> {
-                        if (reader.getLocalName().equals("review")) {
+                        //if (reader.getLocalName().equals("review")) {
                             // Process the data here
                             for (int j : keyPositions) {
                                 if (!keyBuilder.isEmpty()) {
@@ -267,7 +267,7 @@ public class EdgesLoader {
                         }
                     }
                 }
-            }
+            //}
 
             reader.close();
         } catch (XPathExpressionException | IOException | XMLStreamException e) {
