@@ -199,65 +199,58 @@ public class EdgesLoader {
     }
 
 
-    private static void loadEdgesForXML(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
+    private static void loadEdgesForXML(int rows, List<Integer> keyPositions, List<Integer> valuePositions, String nodeA, String nodeB,
                                         String aliasA, String aliasB) throws XPathExpressionException {
-        String fileName = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/filename",
-                document).trim();
-        String path = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/path",
-                document).trim();
-        boolean headings = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/headings",
-                document).trim().equals("yes");
-        String delimiter = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/delimiter",
-                document).trim();
-
         try {
+            String basePath = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/path", document).trim();
+            String fileName = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/filename", document).trim();
+            String fullPath = basePath + fileName;
+
+            File xmlFile = new File(fullPath);
+
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
-
-            // Load the XML file
-            File xmlFile = new File(path + fileName);
-            if (!xmlFile.exists()) {
-                throw new RuntimeException("XML file does not exist at: " + xmlFile.getAbsolutePath());
-            }
-
             Document document = builder.parse(xmlFile);
 
             NodeList reviewNodes = document.getElementsByTagName("review");
+
+            StringBuilder keyBuilder = new StringBuilder();
+            StringBuilder valueBuilder = new StringBuilder();
+
             for (int i = 0; i < reviewNodes.getLength(); i++) {
                 Node reviewNode = reviewNodes.item(i);
 
                 if (reviewNode.getNodeType() != Node.ELEMENT_NODE) {
-                    continue;  // Skip non-element nodes
+                    continue; // Skip non-element nodes
                 }
 
                 Element reviewElement = (Element) reviewNode;
-                String index = reviewElement.getElementsByTagName("index").item(0).getTextContent();
-                String reviewText = reviewElement.getElementsByTagName("review_text").item(0).getTextContent();
+                String index = reviewElement.getElementsByTagName(nodeA).item(0).getTextContent();
+                String reviewText = reviewElement.getElementsByTagName(nodeB).item(0).getTextContent();
 
-                StringBuilder key = new StringBuilder();
+                keyBuilder.setLength(0);
+                valueBuilder.setLength(0);
+
                 for (int j : keyPositions) {
-                    if (key.length() > 0) {
-                        key.append(":");
+                    if (!keyBuilder.isEmpty()) {
+                        keyBuilder.append(":");
                     }
-                    key.append(index);
+                    keyBuilder.append(index);
                 }
 
-                StringBuilder value = new StringBuilder();
                 for (int j : valuePositions) {
-                    if (value.length() > 0) {
-                        value.append(":");
+                    if (!valueBuilder.isEmpty()) {
+                        valueBuilder.append(":");
                     }
-                    value.append(reviewText);
+                    valueBuilder.append(reviewText);
                 }
 
-                if (key.toString().isEmpty() || value.toString().isEmpty()) {
-                    System.err.println("Skipping row with empty key or value: Index " + index);
-                    continue;
-                }
+                String key = keyBuilder.toString();
+                String value = valueBuilder.toString();
 
-                GraphUtils.addValueToCollection(aliasA + "-" + aliasB + ":" + key, value.toString(),
-                        GraphAdditionMethod.AS_LIST);
-                GraphUtils.addValueToCollection(aliasA + "-" + aliasB, key.toString(), GraphAdditionMethod.AS_SET);
+                String compositeKey = aliasA + "-" + aliasB + ":" + key;
+                GraphUtils.addValueToCollection(compositeKey, value, GraphAdditionMethod.AS_LIST);
+                GraphUtils.addValueToCollection(aliasA + "-" + aliasB, key, GraphAdditionMethod.AS_SET);
             }
         } catch (ParserConfigurationException | SAXException | IOException e) {
             throw new RuntimeException("Error parsing XML file", e);
@@ -415,7 +408,7 @@ public class EdgesLoader {
                                 } else if (datasourceType == DatasourceType.EXCEL) {
                                     loadEdgesForExcel(rows, keyPositions, valuePositions, aliasA, aliasB);
                                 } else if (datasourceType == DatasourceType.XML) {
-                                    loadEdgesForXML(rows, keyPositions, valuePositions, aliasA, aliasB);
+                                    loadEdgesForXML(rows, keyPositions, valuePositions, nodeA, nodeB, aliasA, aliasB);
                                 }else {
                                     loadEdgesForProcess(rows, keyPositions, valuePositions, aliasA, aliasB);
                                 }
