@@ -36,7 +36,10 @@ import java.util.stream.Stream;
 import org.dhatim.fastexcel.reader.ReadableWorkbook;
 import org.dhatim.fastexcel.reader.Row;
 
-
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 
 public class EdgesLoader {
@@ -199,8 +202,12 @@ public class EdgesLoader {
     }
 
 
-    private static void loadEdgesForXML(int rows, List<Integer> keyPositions, List<Integer> valuePositions, String nodeA, String nodeB,
-                                        String aliasA, String aliasB) throws XPathExpressionException {
+
+
+// ...
+
+    public static void loadEdgesForXML(int rows, List<Integer> keyPositions, List<Integer> valuePositions, String nodeA, String nodeB,
+                                       String aliasA, String aliasB) {
         try {
             String basePath = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/path", document).trim();
             String fileName = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/filename", document).trim();
@@ -208,52 +215,63 @@ public class EdgesLoader {
 
             File xmlFile = new File(fullPath);
 
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(xmlFile);
-
-            NodeList reviewNodes = document.getElementsByTagName("review");
+            XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+            XMLStreamReader reader = inputFactory.createXMLStreamReader(new FileInputStream(xmlFile));
 
             StringBuilder keyBuilder = new StringBuilder();
             StringBuilder valueBuilder = new StringBuilder();
+            String index = null;
+            String reviewText = null;
 
-            for (int i = 0; i < reviewNodes.getLength(); i++) {
-                Node reviewNode = reviewNodes.item(i);
+            String compositeKeyPrefix = aliasA + "-" + aliasB + ":";
+            String aliasKey = aliasA + "-" + aliasB;
 
-                if (reviewNode.getNodeType() != Node.ELEMENT_NODE) {
-                    continue; // Skip non-element nodes
-                }
+            while (reader.hasNext()) {
+                int event = reader.next();
 
-                Element reviewElement = (Element) reviewNode;
-                String index = reviewElement.getElementsByTagName(nodeA).item(0).getTextContent();
-                String reviewText = reviewElement.getElementsByTagName(nodeB).item(0).getTextContent();
-
-                keyBuilder.setLength(0);
-                valueBuilder.setLength(0);
-
-                for (int j : keyPositions) {
-                    if (!keyBuilder.isEmpty()) {
-                        keyBuilder.append(":");
+                switch (event) {
+                    case XMLStreamConstants.START_ELEMENT -> {
+                        String elementName = reader.getLocalName();
+                        if (elementName.equals("review")) {
+                            keyBuilder.setLength(0);
+                            valueBuilder.setLength(0);
+                        } else if (elementName.equals(nodeA)) {
+                            index = reader.getElementText();
+                        } else if (elementName.equals(nodeB)) {
+                            reviewText = reader.getElementText();
+                        }
                     }
-                    keyBuilder.append(index);
-                }
+                    case XMLStreamConstants.END_ELEMENT -> {
+                        if (reader.getLocalName().equals("review")) {
+                            // Process the data here
+                            for (int j : keyPositions) {
+                                if (!keyBuilder.isEmpty()) {
+                                    keyBuilder.append(":");
+                                }
+                                keyBuilder.append(index);
+                            }
 
-                for (int j : valuePositions) {
-                    if (!valueBuilder.isEmpty()) {
-                        valueBuilder.append(":");
+                            for (int j : valuePositions) {
+                                if (!valueBuilder.isEmpty()) {
+                                    valueBuilder.append(":");
+                                }
+                                valueBuilder.append(reviewText);
+                            }
+
+                            String key = keyBuilder.toString();
+                            String value = valueBuilder.toString();
+
+                            String compositeKey = compositeKeyPrefix + key;
+                            GraphUtils.addValueToCollection(compositeKey, value, GraphAdditionMethod.AS_LIST);
+                            GraphUtils.addValueToCollection(aliasKey, key, GraphAdditionMethod.AS_SET);
+                        }
                     }
-                    valueBuilder.append(reviewText);
                 }
-
-                String key = keyBuilder.toString();
-                String value = valueBuilder.toString();
-
-                String compositeKey = aliasA + "-" + aliasB + ":" + key;
-                GraphUtils.addValueToCollection(compositeKey, value, GraphAdditionMethod.AS_LIST);
-                GraphUtils.addValueToCollection(aliasA + "-" + aliasB, key, GraphAdditionMethod.AS_SET);
             }
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            throw new RuntimeException("Error parsing XML file", e);
+
+            reader.close();
+        } catch (XPathExpressionException | IOException | XMLStreamException e) {
+            throw new RuntimeException("Error processing XML file", e);
         }
     }
 
