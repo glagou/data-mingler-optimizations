@@ -170,7 +170,7 @@
     <edge>
         <headnode>
             <name>
-                product_id
+                index
             </name>
             <description>
                 None
@@ -206,7 +206,7 @@
         </headnode>
         <tailnode>
             <name>
-                product_id
+                index
             </name>
             <description>
                 None

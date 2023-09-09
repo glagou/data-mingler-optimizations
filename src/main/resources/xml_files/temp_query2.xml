@@ -7,7 +7,7 @@
 			X000
 		</label>
 		<onnode>
-			product_id
+			index
 		</onnode>
 		<children>
 			X001

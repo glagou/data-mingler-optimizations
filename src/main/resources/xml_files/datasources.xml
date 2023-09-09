@@ -10,7 +10,7 @@
 			,
 		</delimiter>
 		<path>
-			C:\Users\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
+			C:\Users\apadelopoulou\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
 		</path>
 		<filename>
 			user_product_data.csv
@@ -27,7 +27,7 @@
 			myExcel
 		</name>
 		<path>
-			C:\Users\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
+			C:\Users\apadelopoulou\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
 		</path>
 		<filename>
 			product_info.xlsx
@@ -39,7 +39,7 @@
 			yes
 		</headings>
 	</datasource>
-	<datasource type="csv">
+	<datasource type="xml">
 		<id>
 			3
 		</id>
@@ -50,10 +50,10 @@
 			,
 		</delimiter>
 		<path>
-			C:\Users\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
+			C:\Users\apadelopoulou\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
 		</path>
 		<filename>
-			reviews.csv
+			faker_reviews_xml.xml
 		</filename>
 		<headings>
 			yes
