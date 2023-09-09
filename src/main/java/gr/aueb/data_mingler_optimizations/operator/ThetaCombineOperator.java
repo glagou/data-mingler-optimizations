@@ -3,32 +3,26 @@ package gr.aueb.data_mingler_optimizations.operator;
 import gr.aueb.data_mingler_optimizations.enumerator.GraphAdditionMethod;
 import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
-import org.python.jsr223.PyScriptEngineFactory;
+import jep.JepException;
+import jep.SharedInterpreter;
 
-import javax.script.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
 public class ThetaCombineOperator {
-    private static final ScriptEngineManager manager = new ScriptEngineManager();
-    private static ScriptEngine engine;
+    static SharedInterpreter interpreter = new SharedInterpreter();
 
     private static boolean evaluateTheta(String theta, String key, String rootNode, String[] allChildNodes) {
         if (theta.equals("True")) return true;
         try {
-            if (engine == null) {
-                engine = manager.getEngineByName("python");
-            }
             for (String childNode : allChildNodes) {
                 String element = ((List<String>) GraphUtils.getElements(rootNode + '-' + childNode + ':' + key)).get(0);
                 theta = theta.replace('$' + childNode + '$', element);
             }
-            Bindings bindings = new SimpleBindings();
-            bindings.put("key", key);
-            Object result = engine.eval(theta, bindings);
-            return result instanceof Boolean && (Boolean) result;
-        } catch (ScriptException e) {
+            interpreter.set("key", key);
+            return interpreter.eval(theta);
+        } catch (JepException e) {
             System.out.println(e.getMessage());
         }
         return false;
@@ -36,7 +30,6 @@ public class ThetaCombineOperator {
 
     public static void run(String rootNode, String newChildNode, String allChildNodesCL, String outputChildNodesCL,
                            String thetaCL) {
-        manager.registerEngineExtension("python", new PyScriptEngineFactory());
         Instant start = Instant.now();
 
         boolean hasOutput = !outputChildNodesCL.isEmpty();
