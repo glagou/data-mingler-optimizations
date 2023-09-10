@@ -41,6 +41,15 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
+import javax.xml.xpath.XPathExpressionException;
+
+
 
 public class EdgesLoader {
 
@@ -109,7 +118,6 @@ public class EdgesLoader {
                                              String queryString, String aliasA, String aliasB)
             throws XPathExpressionException {
 
-        DatabaseSystem dbSystem = findDatabaseSystem(rows);
         String connString = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/connection",
                 document).trim();
         String username = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/username",
@@ -119,21 +127,9 @@ public class EdgesLoader {
         String database = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/database",
                 document).trim();
 
+        String url = "jdbc:postgresql://" + connString + "/" + database;
 
-        try {
-            Connection connection;
-            if (dbSystem == DatabaseSystem.MSACCESS) {
-                connection = DriverManager.getConnection("jdbc:ucanaccess://" + connString);
-            } else {
-                Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-                if (username.isEmpty() && password.isEmpty())
-                    connection = DriverManager.getConnection("jdbc:sqlserver://" + connString +
-                            ";databaseName = " + database + ";integratedSecurity=true;");
-                else
-                    connection = DriverManager.getConnection("jdbc:sqlserver://" + connString +
-                            ";databaseName = " + database + ";username=" + username + ";password=" + password);
-            }
-
+        try (Connection connection = DriverManager.getConnection(url, username, password)) {
             Statement statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(queryString);
             while (resultSet.next()) {
@@ -153,11 +149,11 @@ public class EdgesLoader {
             }
             resultSet.close();
             statement.close();
-            connection.close();
-        } catch (SQLException | ClassNotFoundException e) {
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
+
 
     private static void loadEdgesForCsv(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
                                         String aliasA, String aliasB) throws XPathExpressionException {

@@ -59,4 +59,13 @@
 			yes
 		</headings>
 	</datasource>
+	<datasource type="db">
+		<id> 4 </id>
+		<name>mypostgresql</name>
+		<system>postgresql</system>
+		<connection>localhost:5432</connection>
+		<username>bdms</username>
+		<password>mysecretpassword</password>
+		<database>postgres</database>
+	</datasource>
 </datasources>

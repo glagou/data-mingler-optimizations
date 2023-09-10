@@ -1,0 +1,36 @@
+<query>
+    <rootnode>
+        X000
+    </rootnode>
+    <node>
+        <label>
+            X000
+        </label>
+        <onnode>
+            int_id
+        </onnode>
+        <children>
+            X001
+        </children>
+        <transformations />
+        <theta />
+        <output />
+    </node>
+    <node>
+        <label>
+            X001
+        </label>
+        <onnode>
+            pickup_datetime
+        </onnode>
+        <children>
+        </children>
+        <transformations>
+            map:python,,len($X001$);aggregate:sum
+        </transformations>
+        <theta />
+        <output>
+            yes
+        </output>
+    </node>
+</query>
