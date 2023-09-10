@@ -115,44 +115,46 @@ public class EdgesLoader {
     }
 
     private static void loadEdgesForDatabase(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
-                                             String queryString, String aliasA, String aliasB)
-            throws XPathExpressionException {
-
-        String connString = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/connection",
-                document).trim();
-        String username = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/username",
-                document).trim();
-        String password = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/password",
-                document).trim();
-        String database = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/database",
-                document).trim();
+                                             String queryString, String aliasA, String aliasB) throws XPathExpressionException {
+        String connString = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/connection").trim();
+        String username = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/username").trim();
+        String password = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/password").trim();
+        String database = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/database").trim();
 
         String url = "jdbc:postgresql://" + connString + "/" + database;
 
-        try (Connection connection = DriverManager.getConnection(url, username, password)) {
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(queryString);
+        try (Connection connection = DriverManager.getConnection(url, username, password);
+             PreparedStatement statement = connection.prepareStatement(queryString);
+             ResultSet resultSet = statement.executeQuery()) {
+
             while (resultSet.next()) {
                 StringBuilder key = new StringBuilder();
-                for (int j = 0; j < keyPositions.size(); j++) {
-                    if (j != 0) key.append(":");
-                    key.append(resultSet.getString(keyPositions.get(j)));
+                for (int j : keyPositions) {
+                    if (!key.isEmpty()) key.append(":");
+                    key.append(resultSet.getString(j));
                 }
+
                 StringBuilder value = new StringBuilder();
-                for (int j = 0; j < valuePositions.size(); j++) {
-                    if (j != 0) value.append(":");
-                    value.append(resultSet.getString(valuePositions.get(j)));
+                for (int j : valuePositions) {
+                    if (!value.isEmpty()) value.append(":");
+                    value.append(resultSet.getString(j));
                 }
+
                 GraphUtils.addValueToCollection(aliasA + "-" + aliasB + ":" + key, value.toString(),
                         GraphAdditionMethod.AS_LIST);
+
                 GraphUtils.addValueToCollection(aliasA + "-" + aliasB, key.toString(), GraphAdditionMethod.AS_SET);
             }
-            resultSet.close();
-            statement.close();
+
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
+
+    private static String getSingleNodeValue(Document document, String xpathExpression) throws XPathExpressionException {
+        return xpath.evaluate(xpathExpression, document).trim();
+    }
+
 
 
     private static void loadEdgesForCsv(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
