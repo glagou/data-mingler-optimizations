@@ -11,10 +11,7 @@ import java.util.Set;
 public class MapOperator {
     static SharedInterpreter interpreter = new SharedInterpreter();
 
-
     public static void run(String rootNode, String childNode, String functionInvocation) {
-        interpreter.exec("import textblob");
-        interpreter.exec("from textblob import TextBlob");
         String edge = rootNode + "-" + childNode;
         functionInvocation = functionInvocation.replace('$' + childNode + '$', "value");
         Set<String> keys = (Set<String>) GraphUtils.getElements(edge);
@@ -26,13 +23,13 @@ public class MapOperator {
             for (String value : values) {
                 try {
                     interpreter.set("value", value);
-                    interpreter.exec("result = " + functionInvocation);
-                    Object result = interpreter.getValue("result");
+                    Object result = interpreter.getValue(functionInvocation);
                     GraphUtils.addValueToCollection(graphKey, String.valueOf(result), GraphAdditionMethod.AS_LIST);
                 } catch (JepException e) {
                     throw new RuntimeException(e);
                 }
             }
+            interpreter.exec("del value");
         }
     }
 }

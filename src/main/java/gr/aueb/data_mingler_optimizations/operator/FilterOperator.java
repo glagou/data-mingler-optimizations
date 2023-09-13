@@ -30,6 +30,7 @@ public class FilterOperator {
                     throw new RuntimeException(e);
                 }
             }
+            interpreter.exec("del Lvalue");
         }
     }
 }

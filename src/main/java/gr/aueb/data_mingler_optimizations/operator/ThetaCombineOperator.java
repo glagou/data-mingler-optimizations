@@ -24,6 +24,8 @@ public class ThetaCombineOperator {
             return interpreter.eval(theta);
         } catch (JepException e) {
             System.out.println(e.getMessage());
+        } finally {
+            interpreter.exec("del key");
         }
         return false;
     }
