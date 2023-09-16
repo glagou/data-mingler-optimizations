@@ -56,7 +56,7 @@
             product_id
         </onnode>
         <children>
-            X002
+            X004
         </children>
         <transformations>
             aggregate:COUNT
@@ -88,7 +88,7 @@
             product_id
         </onnode>
         <children>
-            X002
+            X006
         </children>
         <transformations>
             aggregate:AVERAGE
@@ -120,7 +120,7 @@
             product_id
         </onnode>
         <children>
-            X002
+            X008
         </children>
         <transformations>
             aggregate:min
@@ -144,5 +144,4 @@
             yes
         </output>
     </node>
-
 </query>
