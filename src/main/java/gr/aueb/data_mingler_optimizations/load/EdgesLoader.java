@@ -8,6 +8,7 @@ import gr.aueb.data_mingler_optimizations.exception.InvalidNumberOfCmdArgumentsE
 import gr.aueb.data_mingler_optimizations.exception.NoEdgeExistsException;
 import gr.aueb.data_mingler_optimizations.exception.UnableToInitializeDocumentAndXpathException;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
+import org.dhatim.fastexcel.reader.Cell;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.*;
@@ -297,8 +298,12 @@ public class EdgesLoader {
                         StringBuilder key = new StringBuilder();
                         for (int j : keyPositions) {
                             String str;
-                            str = r.getCellAsString(0).orElse(null);
-
+                            Cell cell = r.getCell(j - 1);
+                            if (cell != null) {
+                                str = cell.getValue().toString();
+                            } else {
+                                str = null;
+                            }
                             if (!key.isEmpty()) key.append(":");
                             key.append(str);
                         }
@@ -306,8 +311,12 @@ public class EdgesLoader {
                         StringBuilder value = new StringBuilder();
                         for (int j : valuePositions) {
                             String str;
-                            str = String.valueOf(r.getCellAsNumber(1).orElse(null));
-
+                            Cell cell = r.getCell(j - 1);
+                            if (cell != null) {
+                                str = cell.getValue().toString();
+                            } else {
+                                str = null;
+                            }
                             if (!value.isEmpty()) value.append(":");
                             value.append(str);
                         }
