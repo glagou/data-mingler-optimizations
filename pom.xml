@@ -32,9 +32,9 @@
             <version>5.6.0</version>
         </dependency>
         <dependency>
-            <groupId>org.python</groupId>
-            <artifactId>jython-standalone</artifactId>
-            <version>2.7.3b1</version>
+            <groupId>black.ninia</groupId>
+            <artifactId>jep</artifactId>
+            <version>4.1.1</version>
         </dependency>
         <dependency>
             <groupId>org.dhatim</groupId>
