@@ -8,9 +8,9 @@ import gr.aueb.data_mingler_optimizations.exception.InvalidNumberOfCmdArgumentsE
 import gr.aueb.data_mingler_optimizations.exception.LoadEdgesExecutionFailedException;
 import gr.aueb.data_mingler_optimizations.exception.UnableToInitializeDocumentAndXpathException;
 import gr.aueb.data_mingler_optimizations.load.EdgesLoader;
+import gr.aueb.data_mingler_optimizations.util.PythonUtils;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 import gr.aueb.data_mingler_optimizations.util.OperatorUtils;
-import jep.MainInterpreter;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -281,7 +281,7 @@ public class QueryEvaluation {
     }
 
     public static void main(String[] args) throws IOException, XPathExpressionException {
-        MainInterpreter.setJepLibraryPath("/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/jep/libjep.jnilib");
+        PythonUtils.initialize("/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/jep/libjep.jnilib");
         validateCmdArguments(args);
         initializeValuesFromCmdArguments(args);
         initializeDocumentAndXpath();

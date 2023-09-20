@@ -31,4 +31,15 @@ public class PythonUtils {
         }
         return null;
     }
+
+    public static boolean evalFromScript(String script, Interpreter interpreter) throws JepException {
+        String[] lines = script.split("\n");
+        for (int i = 0; i < lines.length; i++) {
+            interpreter.exec(lines[i]);
+            if (i == lines.length - 1) {
+                return interpreter.eval(lines[i]);
+            }
+        }
+        throw new RuntimeException("Something went wrong with the evaluation of the script");
+    }
 }

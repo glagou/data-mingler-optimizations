@@ -3,6 +3,7 @@ package gr.aueb.data_mingler_optimizations.operator;
 import gr.aueb.data_mingler_optimizations.enumerator.GraphAdditionMethod;
 import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
+import gr.aueb.data_mingler_optimizations.util.PythonUtils;
 import jep.JepException;
 import jep.SharedInterpreter;
 
@@ -21,7 +22,7 @@ public class ThetaCombineOperator {
                 theta = theta.replace('$' + childNode + '$', element);
             }
             interpreter.set("key", key);
-            return interpreter.eval(theta);
+            return PythonUtils.evalFromScript(theta, interpreter);
         } catch (JepException e) {
             System.out.println(e.getMessage());
         } finally {
