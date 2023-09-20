@@ -2,6 +2,6 @@ import textblob
 
 from textblob import TextBlob
 
-def analyze_sentiment(comment):
-    sentiment_score = TextBlob(comment).sentiment.polarity
-    return sentiment_score
+
+x = 'test'
+TextBlob($X001$).sentiment.polarity
