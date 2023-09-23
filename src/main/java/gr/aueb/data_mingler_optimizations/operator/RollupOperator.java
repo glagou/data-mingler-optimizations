@@ -20,8 +20,10 @@ public class RollupOperator {
             for (String value : values) {
                 String graphKey2 = edge2 + ":" + value;
                 List<String> values2 = (List<String>) GraphUtils.getElements(graphKey2);
-                for (String value2 : values2) {
-                    GraphUtils.addValueToCollection(graphKey, value2, GraphAdditionMethod.AS_LIST);
+                if (values2 != null) {
+                    for (String value2 : values2) {
+                        GraphUtils.addValueToCollection(graphKey, value2, GraphAdditionMethod.AS_LIST);
+                    }
                 }
             }
         }

@@ -52,7 +52,7 @@ import java.util.List;
  */
 public class QueryEvaluation {
 
-    private static final String PATH_TO_EXCEL = "\"C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE\"";
+    private static final String PATH_TO_EXCEL = "\"C:\\Program Files (x86)\\Microsoft Office\\root\\Office16\\EXCEL.EXE\"";
 
     private static final Map<String, List<String>> NODE_TO_CHILDREN_NODES = new HashMap<>();
     private static final Map<String, String> DVM_NODES_TO_LABELS = new HashMap<>();
@@ -255,12 +255,14 @@ public class QueryEvaluation {
                 out.print(",\"");
                 String edge = rootNode + "-" + childNode + ":" + key;
                 Collection<String> values = GraphUtils.getElements(edge);
-                boolean started = false;
-                for (String value : values) {
-                    if (started)
-                        out.print(",");
-                    out.print(value);
-                    started = true;
+                if (values != null) {
+                    boolean started = false;
+                    for (String value : values) {
+                        if (started)
+                            out.print(",");
+                        out.print(value);
+                        started = true;
+                    }
                 }
                 out.print("\"");
             }
