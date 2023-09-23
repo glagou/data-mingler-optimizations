@@ -10,7 +10,7 @@
             driver_id
         </onnode>
         <children>
-            X001,X003,X005,X007
+            X001,X003,X005,X007,X009
         </children>
         <transformations />
         <theta />
@@ -95,7 +95,7 @@
             X006
         </children>
         <transformations>
-            map:python,,len($X006$);aggregate:sum
+            aggregate:count
         </transformations>
         <theta />
         <output>
@@ -141,6 +141,40 @@
         </label>
         <onnode>
             pickup_datetime
+        </onnode>
+        <children>
+        </children>
+        <transformations>
+        </transformations>
+        <theta />
+        <output>
+            yes
+        </output>
+    </node>
+    <node>
+        <label>
+            X009
+        </label>
+        <onnode>
+            int_id
+        </onnode>
+        <children>
+            X010
+        </children>
+        <transformations>
+            filter: $X009$ == 4.094
+        </transformations>
+        <theta />
+        <output>
+            yes
+        </output>
+    </node>
+    <node>
+        <label>
+            X010
+        </label>
+        <onnode>
+            trip_miles
         </onnode>
         <children>
         </children>
