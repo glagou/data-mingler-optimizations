@@ -12,7 +12,6 @@ import java.time.Instant;
 import java.util.*;
 
 public class ThetaCombineOperator {
-    static SharedInterpreter interpreter = new SharedInterpreter();
 
     private static boolean evaluateTheta(String theta, String key, String rootNode, String[] allChildNodes) {
         if (theta.equals("True")) return true;
@@ -21,12 +20,12 @@ public class ThetaCombineOperator {
                 String element = ((List<String>) GraphUtils.getElements(rootNode + '-' + childNode + ':' + key)).get(0);
                 theta = theta.replace('$' + childNode + '$', element);
             }
-            interpreter.set("key", key);
-            return PythonUtils.evalFromScript(theta, interpreter);
+            PythonUtils.getInterpreter().set("key", key);
+            return PythonUtils.evalFromScript(theta);
         } catch (JepException e) {
             System.out.println(e.getMessage());
         } finally {
-            interpreter.exec("del key");
+            PythonUtils.getInterpreter().exec("del key");
         }
         return false;
     }

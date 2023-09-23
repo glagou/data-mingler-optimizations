@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.Set;
 
 public class FilterOperator {
-    static SharedInterpreter interpreter = new SharedInterpreter();
 
     public static void run(String rootNode, String childNode, String expressionCL) {
         String expression = expressionCL.replace('$' + childNode + '$', "Lvalue");
@@ -23,8 +22,8 @@ public class FilterOperator {
             GraphUtils.removeElement(graphKey);
             for (String value : values) {
                 try {
-                    interpreter.set("Lvalue", value);
-                    boolean result = PythonUtils.evalFromScript(expression, interpreter);
+                    PythonUtils.getInterpreter().set("Lvalue", value);
+                    boolean result = PythonUtils.evalFromScript(expression);
                     if (result) {
                         GraphUtils.addValueToCollection(graphKey, value, GraphAdditionMethod.AS_LIST);
                     }
@@ -32,7 +31,7 @@ public class FilterOperator {
                     throw new RuntimeException(e);
                 }
             }
-            interpreter.exec("del Lvalue");
+            PythonUtils.getInterpreter().exec("del Lvalue");
         }
     }
 }

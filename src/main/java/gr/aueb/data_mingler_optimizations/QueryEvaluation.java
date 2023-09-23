@@ -12,6 +12,7 @@ import gr.aueb.data_mingler_optimizations.load.EnvLoader;
 import gr.aueb.data_mingler_optimizations.util.PythonUtils;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 import gr.aueb.data_mingler_optimizations.util.OperatorUtils;
+import jep.MainInterpreter;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -285,7 +286,7 @@ public class QueryEvaluation {
 
     public static void main(String[] args) throws IOException, XPathExpressionException {
         EnvLoader.load();
-        PythonUtils.initialize(System.getProperty("JEP_PATH"));
+        MainInterpreter.setJepLibraryPath(System.getProperty("JEP_PATH"));
         validateCmdArguments(args);
         initializeValuesFromCmdArguments(args);
         initializeDocumentAndXpath();

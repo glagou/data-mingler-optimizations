@@ -16,8 +16,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MapOperator {
-
-    static final Interpreter interpreter = new SharedInterpreter();
     static final Pattern importPattern = Pattern.compile("^import .*|^from .* import .*");
 
 
@@ -33,11 +31,11 @@ public class MapOperator {
             try {
                 for (String value : values) {
                     Object result = null;
-                    interpreter.set("value", value);
-                    result = PythonUtils.getValueFromScript(pythonCode, interpreter);
+                    PythonUtils.getInterpreter().set("value", value);
+                    result = PythonUtils.getValueFromScript(pythonCode);
                     GraphUtils.addValueToCollection(graphKey, String.valueOf(result), GraphAdditionMethod.AS_LIST);
                 }
-                interpreter.exec("del value");
+                PythonUtils.getInterpreter().exec("del value");
             } catch (JepException e) {
                 throw new RuntimeException(e);
             }
@@ -65,7 +63,7 @@ public class MapOperator {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        PythonUtils.importOnceToInterpreter(importsBuilder.toString(), interpreter);
+        PythonUtils.importOnceToInterpreter(importsBuilder.toString());
         return codeBuilder.toString();
     }
 }
