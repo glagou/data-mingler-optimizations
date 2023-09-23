@@ -53,7 +53,7 @@
 			C:\Users\apadelopoulou\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
 		</path>
 		<filename>
-			faker_reviews_xml.xml
+			faker_reviews_xml_v3.xml
 		</filename>
 		<headings>
 			yes
@@ -67,5 +67,45 @@
 		<username>bdms</username>
 		<password>mysecretpassword</password>
 		<database>postgres</database>
+	</datasource>
+	<datasource type="excel">
+		<id>
+			5
+		</id>
+		<name>
+			myExcel2
+		</name>
+		<path>
+			C:\Users\apadelopoulou\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
+		</path>
+		<filename>
+			uber_drivers.xlsx
+		</filename>
+		<sheet>
+			Sheet1
+		</sheet>
+		<headings>
+			yes
+		</headings>
+	</datasource>
+	<datasource type="csv">
+		<id>
+			6
+		</id>
+		<name>
+			myCSV3
+		</name>
+		<delimiter>
+			,
+		</delimiter>
+		<path>
+			C:\Users\apadelopoulou\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
+		</path>
+		<filename>
+			uber_drivers_trips.csv
+		</filename>
+		<headings>
+			yes
+		</headings>
 	</datasource>
 </datasources>

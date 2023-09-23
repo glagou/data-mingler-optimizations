@@ -170,7 +170,7 @@
     <edge>
         <headnode>
             <name>
-                index
+                int_id
             </name>
             <description>
                 None
@@ -206,7 +206,7 @@
         </headnode>
         <tailnode>
             <name>
-                index
+                int_id
             </name>
             <description>
                 None
@@ -243,7 +243,7 @@
         <datasource>
             mypostgresql
         </datasource>
-        <query>SELECT int_id,pickup_datetime FROM trip_time</query>
+        <query>SELECT int_id,pickup_datetime FROM trip_time WHERE int_id &lt; 100 limit 100</query>
         <key>
             1
         </key>
@@ -271,7 +271,231 @@
         <datasource>
             mypostgresql
         </datasource>
-        <query>SELECT int_id,pickup_datetime FROM trip_time</query>
+        <query>SELECT int_id,pickup_datetime FROM trip_time WHERE int_id &lt; 100 limit 100</query>
+        <key>
+            2
+        </key>
+        <value>
+            1
+        </value>
+    </edge>
+    <edge>
+        <headnode>
+            <name>
+                int_id
+            </name>
+            <description>
+                None
+            </description>
+        </headnode>
+        <tailnode>
+            <name>
+                trip_miles
+            </name>
+            <description>
+                None
+            </description>
+        </tailnode>
+        <datasource>
+            mypostgresql
+        </datasource>
+        <query>SELECT int_id,trip_miles FROM trip_speed WHERE int_id &lt; 100 LIMIT 100</query>
+        <key>
+            1
+        </key>
+        <value>
+            2
+        </value>
+    </edge>
+    <edge>
+        <headnode>
+            <name>
+                trip_miles
+            </name>
+            <description>
+                None
+            </description>
+        </headnode>
+        <tailnode>
+            <name>
+                int_id
+            </name>
+            <description>
+                None
+            </description>
+        </tailnode>
+        <datasource>
+            mypostgresql
+        </datasource>
+        <query>SELECT int_id,trip_miles FROM trip_speed WHERE int_id &lt; 100 LIMIT 100</query>
+        <key>
+            2
+        </key>
+        <value>
+            1
+        </value>
+    </edge>
+    <edge>
+        <headnode>
+            <name>
+                int_id
+            </name>
+            <description>
+                None
+            </description>
+        </headnode>
+        <tailnode>
+            <name>
+                base_passenger_fare
+            </name>
+            <description>
+                None
+            </description>
+        </tailnode>
+        <datasource>
+            mypostgresql
+        </datasource>
+        <query>SELECT int_id,base_passenger_fare FROM trip_details WHERE int_id &lt; 100 LIMIT 100</query>
+        <key>
+            1
+        </key>
+        <value>
+            2
+        </value>
+    </edge>
+    <edge>
+        <headnode>
+            <name>
+                base_passenger_fare
+            </name>
+            <description>
+                None
+            </description>
+        </headnode>
+        <tailnode>
+            <name>
+                int_id
+            </name>
+            <description>
+                None
+            </description>
+        </tailnode>
+        <datasource>
+            mypostgresql
+        </datasource>
+        <query>SELECT int_id,base_passenger_fare FROM trip_details WHERE int_id &lt; 100 LIMIT 100</query>
+        <key>
+            2
+        </key>
+        <value>
+            1
+        </value>
+    </edge>
+    <edge>
+        <headnode>
+            <name>
+                driver_uid
+            </name>
+            <description>
+                None
+            </description>
+        </headnode>
+        <tailnode>
+            <name>
+                driver_id
+            </name>
+            <description>
+                None
+            </description>
+        </tailnode>
+        <datasource>
+            myExcel2
+        </datasource>
+        <query/>
+        <key>
+            2
+        </key>
+        <value>
+            1
+        </value>
+    </edge>
+    <edge>
+        <headnode>
+            <name>
+                driver_id
+            </name>
+            <description>
+                None
+            </description>
+        </headnode>
+        <tailnode>
+            <name>
+                driver_uid
+            </name>
+            <description>
+                None
+            </description>
+        </tailnode>
+        <datasource>
+            myExcel2
+        </datasource>
+        <query/>
+        <key>
+            1
+        </key>
+        <value>
+            2
+        </value>
+    </edge>
+    <edge>
+        <headnode>
+            <name>
+                driver_id
+            </name>
+            <description>
+                None
+            </description>
+        </headnode>
+        <tailnode>
+            <name>
+                int_id
+            </name>
+            <description>
+                None
+            </description>
+        </tailnode>
+        <datasource>
+            myCSV3
+        </datasource>
+        <query/>
+        <key>
+            1
+        </key>
+        <value>
+            2
+        </value>
+    </edge>
+    <edge>
+        <headnode>
+            <name>
+                int_id
+            </name>
+            <description>
+                None
+            </description>
+        </headnode>
+        <tailnode>
+            <name>
+                driver_id
+            </name>
+            <description>
+                None
+            </description>
+        </tailnode>
+        <datasource>
+            myCSV3
+        </datasource>
+        <query/>
         <key>
             2
         </key>
