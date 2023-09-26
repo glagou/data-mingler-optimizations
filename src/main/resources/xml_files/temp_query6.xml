@@ -95,7 +95,7 @@
             X006
         </children>
         <transformations>
-            aggregate:count
+            map:python,,len($X005$);aggregate:sum
         </transformations>
         <theta />
         <output>
