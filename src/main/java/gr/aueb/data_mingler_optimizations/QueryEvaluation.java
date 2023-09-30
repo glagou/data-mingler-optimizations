@@ -221,7 +221,7 @@ public class QueryEvaluation {
 
     private static void evaluateChildAndExecuteTransformations() {
         // Create a parallel stream to evaluate and transform child nodes concurrently
-        childNodes.parallelStream().forEach(childNode -> {
+        childNodes.forEach(childNode -> {
             evaluateChild(rootNode, childNode);
             System.out.println("Finished evaluating child: " + childNode);
             OperatorUtils.executeTransformationOnEdge(rootNode, childNode);
@@ -285,6 +285,7 @@ public class QueryEvaluation {
     }
 
     public static void main(String[] args) throws IOException, XPathExpressionException {
+        long startTime = System.currentTimeMillis();
         EnvLoader.load();
         MainInterpreter.setJepLibraryPath(System.getProperty("JEP_PATH"));
         validateCmdArguments(args);
@@ -304,6 +305,13 @@ public class QueryEvaluation {
         Set<String> keys = (Set<String>) GraphUtils.combineKeys(rootNode, outputChildNodes);
         String outputFileName = createOutputFile(keys, outputChildNodes);
         openWithExcelIfNeeded(outputFileName);
+        long endTime = System.currentTimeMillis();
+        long executionTimeInMillis = endTime - startTime;
+        long executionTimeInSecs = executionTimeInMillis / 1000;
+        long mins = executionTimeInSecs / 60;
+        long secs = executionTimeInSecs % 60;
+        // Print the execution time in minutes and seconds
+        System.out.println("Execution time: " + mins + " minutes " + secs + " seconds");
     }
 
     public static Map<String, String> getNodeToTransformations() {
