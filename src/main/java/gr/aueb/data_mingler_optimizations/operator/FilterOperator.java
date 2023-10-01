@@ -1,6 +1,8 @@
 package gr.aueb.data_mingler_optimizations.operator;
 
 import gr.aueb.data_mingler_optimizations.enumerator.GraphAdditionMethod;
+import gr.aueb.data_mingler_optimizations.python.Script;
+import gr.aueb.data_mingler_optimizations.singleton.PythonInterpreterSingleton;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 import gr.aueb.data_mingler_optimizations.util.PythonUtils;
 import jep.JepException;
@@ -13,7 +15,9 @@ import java.util.Set;
 public class FilterOperator {
 
     public static void run(String rootNode, String childNode, String expressionCL) {
-        String expression = expressionCL.replace('$' + childNode + '$', "Lvalue");
+        Script pythonCode = new Script(expressionCL);
+        pythonCode.renameScriptVariable('$' + childNode + '$', "Lvalue");
+
         String edge = rootNode + "-" + childNode;
         Set<String> keys = (Set<String>) GraphUtils.getElements(edge);
         for (String key : keys) {
@@ -28,8 +32,8 @@ public class FilterOperator {
                     } else {
                         value2 = value;
                     }
-                    PythonUtils.getInterpreter().set("Lvalue", value2);
-                    boolean result = PythonUtils.evalFromScript(expression);
+                    PythonInterpreterSingleton.getInterpreter().set("Lvalue", value2);
+                    boolean result = PythonUtils.evalFromScript(pythonCode.getScript());
                     if (result) {
                         GraphUtils.addValueToCollection(graphKey, value, GraphAdditionMethod.AS_LIST);
                     }
@@ -37,7 +41,7 @@ public class FilterOperator {
                     throw new RuntimeException(e);
                 }
             }
-            PythonUtils.getInterpreter().exec("del Lvalue");
+            PythonInterpreterSingleton.getInterpreter().exec("del Lvalue");
         }
     }
 }

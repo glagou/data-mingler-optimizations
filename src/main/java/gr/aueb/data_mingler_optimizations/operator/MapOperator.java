@@ -1,6 +1,8 @@
 package gr.aueb.data_mingler_optimizations.operator;
 
 import gr.aueb.data_mingler_optimizations.enumerator.GraphAdditionMethod;
+import gr.aueb.data_mingler_optimizations.python.Script;
+import gr.aueb.data_mingler_optimizations.singleton.PythonInterpreterSingleton;
 import gr.aueb.data_mingler_optimizations.util.PythonUtils;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 import jep.JepException;
@@ -16,7 +18,8 @@ import java.util.regex.Pattern;
 public class MapOperator {
 
     public static void run(String rootNode, String childNode, String script) {
-        String pythonCode = script.replace('$' + childNode + '$', "value");
+        Script pythonCode = new Script(script);
+        pythonCode.renameScriptVariable('$' + childNode + '$', "value");
 
         String edge = rootNode + "-" + childNode;
         Set<String> keys = (Set<String>) GraphUtils.getElements(edge);
@@ -26,12 +29,12 @@ public class MapOperator {
             GraphUtils.removeElement(graphKey);
             try {
                 for (String value : values) {
-                    Object result = null;
-                    PythonUtils.getInterpreter().set("value", value);
-                    result = PythonUtils.getValueFromScript(pythonCode);
+                    Object result;
+                    PythonInterpreterSingleton.getInterpreter().set("value", value);
+                    result = PythonUtils.getValueFromScript(pythonCode.getScript());
                     GraphUtils.addValueToCollection(graphKey, String.valueOf(result), GraphAdditionMethod.AS_LIST);
                 }
-                PythonUtils.getInterpreter().exec("del value");
+                PythonInterpreterSingleton.getInterpreter().exec("del value");
             } catch (JepException e) {
                 throw new RuntimeException(e);
             }

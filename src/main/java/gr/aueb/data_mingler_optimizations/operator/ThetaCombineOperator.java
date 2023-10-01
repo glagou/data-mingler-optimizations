@@ -2,6 +2,8 @@ package gr.aueb.data_mingler_optimizations.operator;
 
 import gr.aueb.data_mingler_optimizations.enumerator.GraphAdditionMethod;
 import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
+import gr.aueb.data_mingler_optimizations.python.Script;
+import gr.aueb.data_mingler_optimizations.singleton.PythonInterpreterSingleton;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 import gr.aueb.data_mingler_optimizations.util.PythonUtils;
 import jep.JepException;
@@ -16,16 +18,17 @@ public class ThetaCombineOperator {
     private static boolean evaluateTheta(String theta, String key, String rootNode, String[] allChildNodes) {
         if (theta.equals("True")) return true;
         try {
+            Script pythonCode = new Script(theta);
             for (String childNode : allChildNodes) {
                 String element = ((List<String>) GraphUtils.getElements(rootNode + '-' + childNode + ':' + key)).get(0);
-                theta = theta.replace('$' + childNode + '$', element);
+                pythonCode.renameScriptVariable('$' + childNode + '$', element);
             }
-            PythonUtils.getInterpreter().set("key", key);
-            return PythonUtils.evalFromScript(theta);
+            PythonInterpreterSingleton.getInterpreter().set("key", key);
+            return PythonUtils.evalFromScript(pythonCode.getScript());
         } catch (JepException e) {
             System.out.println(e.getMessage());
         } finally {
-            PythonUtils.getInterpreter().exec("del key");
+            PythonInterpreterSingleton.getInterpreter().exec("del key");
         }
         return false;
     }
