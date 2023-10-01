@@ -108,4 +108,84 @@
 			yes
 		</headings>
 	</datasource>
+	<datasource type="csv">
+		<id>
+			7
+		</id>
+		<name>
+			myCSV4
+		</name>
+		<delimiter>
+			,
+		</delimiter>
+		<path>
+			C:\Users\apadelopoulou\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
+		</path>
+		<filename>
+			hour_interval_mapping.csv
+		</filename>
+		<headings>
+			yes
+		</headings>
+	</datasource>
+	<datasource type="csv">
+		<id>
+			8
+		</id>
+		<name>
+			myCSV5
+		</name>
+		<delimiter>
+			,
+		</delimiter>
+		<path>
+			C:\Users\apadelopoulou\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
+		</path>
+		<filename>
+			traffic (1).csv
+		</filename>
+		<headings>
+			yes
+		</headings>
+	</datasource>
+	<datasource type="csv">
+		<id>
+			7
+		</id>
+		<name>
+			myCSV4
+		</name>
+		<delimiter>
+			,
+		</delimiter>
+		<path>
+			C:\Users\apadelopoulou\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
+		</path>
+		<filename>
+			hour_interval_mapping.csv
+		</filename>
+		<headings>
+			yes
+		</headings>
+	</datasource>
+	<datasource type="csv">
+		<id>
+			9
+		</id>
+		<name>
+			myCSV6
+		</name>
+		<delimiter>
+			,
+		</delimiter>
+		<path>
+			C:\Users\apadelopoulou\Documents\GitHub\data-mingler-optimizations\src\main\resources\data\
+		</path>
+		<filename>
+			weather.csv
+		</filename>
+		<headings>
+			yes
+		</headings>
+	</datasource>
 </datasources>
