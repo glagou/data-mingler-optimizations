@@ -22,7 +22,13 @@ public class FilterOperator {
             GraphUtils.removeElement(graphKey);
             for (String value : values) {
                 try {
-                    PythonUtils.getInterpreter().set("Lvalue", value);
+                    Object value2;
+                    if (value.matches("-?\\d+(\\.\\d+)?")) {
+                        value2 = Double.parseDouble(value);
+                    } else {
+                        value2 = value;
+                    }
+                    PythonUtils.getInterpreter().set("Lvalue", value2);
                     boolean result = PythonUtils.evalFromScript(expression);
                     if (result) {
                         GraphUtils.addValueToCollection(graphKey, value, GraphAdditionMethod.AS_LIST);
