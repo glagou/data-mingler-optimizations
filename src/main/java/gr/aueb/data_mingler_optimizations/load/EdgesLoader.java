@@ -396,7 +396,6 @@ public class EdgesLoader {
                     "RETURN r.datasource as datasource, r.query as query, r.key as key, r.value as value";
 
             IntStream.iterate(0, i -> i < args.length, i -> i + 4)
-                    .parallel()
                     .forEach(i -> {
                         String nodeA = args[i];
                         String nodeB = args[i + 1];
