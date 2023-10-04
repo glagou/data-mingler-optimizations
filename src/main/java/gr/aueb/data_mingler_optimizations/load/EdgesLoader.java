@@ -50,7 +50,11 @@ import java.sql.Statement;
 import java.util.List;
 import javax.xml.xpath.XPathExpressionException;
 
-
+import org.neo4j.driver.*;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.IntStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class EdgesLoader {
 
@@ -391,61 +395,71 @@ public class EdgesLoader {
     }
 
     public static void loadEdges(String[] args) {
+        ForkJoinPool forkJoinPool = new ForkJoinPool(); // Create a ForkJoinPool
+
         try (Session session = neo4jDriver.session()) {
             String query = "MATCH (a:attribute{name:$nodeA})-[r:has]->(b:attribute{name:$nodeB}) " +
                     "RETURN r.datasource as datasource, r.query as query, r.key as key, r.value as value";
 
-            IntStream.iterate(0, i -> i < args.length, i -> i + 4)
-                    .forEach(i -> {
-                        String nodeA = args[i];
-                        String nodeB = args[i + 1];
-                        String aliasA = args[i + 2].isEmpty() ? nodeA : args[i + 2];
-                        String aliasB = args[i + 3].isEmpty() ? nodeB : args[i + 3];
+            forkJoinPool.submit(() ->
+                    IntStream.iterate(0, i -> i < args.length, i -> i + 4)
+                            .parallel() // Enable parallel processing
+                            .forEach(i -> {
+                                String nodeA = args[i];
+                                String nodeB = args[i + 1];
+                                String aliasA = args[i + 2].isEmpty() ? nodeA : args[i + 2];
+                                String aliasB = args[i + 3].isEmpty() ? nodeB : args[i + 3];
 
-                        try {
-                            Result result = session.run(query, parameters("nodeA", nodeA, "nodeB", nodeB));
+                                try {
+                                    Result result = session.run(query, parameters("nodeA", nodeA, "nodeB", nodeB));
 
-                            while (result.hasNext()) {
-                                Record record = result.next();
-                                String datasource = record.get("datasource").asString();
-                                String queryString = record.get("query").asString();
-                                String[] keyPosStr = record.get("key").asString().split(",", -1);
-                                String[] valuePosStr = record.get("value").asString().split(",", -1);
+                                    while (result.hasNext()) {
+                                        Record record = result.next();
+                                        String datasource = record.get("datasource").asString();
+                                        String queryString = record.get("query").asString();
+                                        String[] keyPosStr = record.get("key").asString().split(",", -1);
+                                        String[] valuePosStr = record.get("value").asString().split(",", -1);
 
-                                List<Integer> keyPositions = new ArrayList<>();
-                                List<Integer> valuePositions = new ArrayList<>();
+                                        List<Integer> keyPositions = new ArrayList<>();
+                                        List<Integer> valuePositions = new ArrayList<>();
 
-                                for (String s : keyPosStr) {
-                                    keyPositions.add(Integer.parseInt(s));
+                                        for (String s : keyPosStr) {
+                                            keyPositions.add(Integer.parseInt(s));
+                                        }
+                                        for (String s : valuePosStr) {
+                                            valuePositions.add(Integer.parseInt(s));
+                                        }
+
+                                        int rows = validateDatasourceExists(datasource, nodeA, nodeB);
+                                        DatasourceType datasourceType = findDatasourceType(rows);
+
+                                        if (datasourceType == DatasourceType.DB) {
+                                            loadEdgesForDatabase(rows, keyPositions, valuePositions, queryString, aliasA, aliasB);
+                                        } else if (datasourceType == DatasourceType.CSV) {
+                                            loadEdgesForCsv(rows, keyPositions, valuePositions, aliasA, aliasB);
+                                        } else if (datasourceType == DatasourceType.EXCEL) {
+                                            loadEdgesForExcel(rows, keyPositions, valuePositions, aliasA, aliasB);
+                                        } else if (datasourceType == DatasourceType.XML) {
+                                            loadEdgesForXML(rows, keyPositions, valuePositions, nodeA, nodeB, aliasA, aliasB);
+                                        } else {
+                                            loadEdgesForProcess(rows, keyPositions, valuePositions, aliasA, aliasB);
+                                        }
+
+                                        keyPositions.clear();
+                                        valuePositions.clear();
+                                    }
+                                } catch (XPathExpressionException e) {
+                                    throw new RuntimeException(e);
                                 }
-                                for (String s : valuePosStr) {
-                                    valuePositions.add(Integer.parseInt(s));
-                                }
-
-                                int rows = validateDatasourceExists(datasource, nodeA, nodeB);
-                                DatasourceType datasourceType = findDatasourceType(rows);
-
-                                if (datasourceType == DatasourceType.DB) {
-                                    loadEdgesForDatabase(rows, keyPositions, valuePositions, queryString, aliasA, aliasB);
-                                } else if (datasourceType == DatasourceType.CSV) {
-                                    loadEdgesForCsv(rows, keyPositions, valuePositions, aliasA, aliasB);
-                                } else if (datasourceType == DatasourceType.EXCEL) {
-                                    loadEdgesForExcel(rows, keyPositions, valuePositions, aliasA, aliasB);
-                                } else if (datasourceType == DatasourceType.XML) {
-                                    loadEdgesForXML(rows, keyPositions, valuePositions, nodeA, nodeB, aliasA, aliasB);
-                                }else {
-                                    loadEdgesForProcess(rows, keyPositions, valuePositions, aliasA, aliasB);
-                                }
-
-                                keyPositions.clear();
-                                valuePositions.clear();
-                            }
-                        } catch (XPathExpressionException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+                            })
+            ).get(); // Wait for all tasks to complete
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            forkJoinPool.shutdown(); // Shut down the ForkJoinPool
         }
     }
+
 
 
 
