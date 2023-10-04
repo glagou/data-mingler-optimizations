@@ -65,6 +65,8 @@ public class EdgesLoader {
     private static XPath xpath;
     private static Document document;
 
+    static Connection connection = null;
+
     private static void validateCmdArguments(String[] args) {
         if (args.length < 4 || args.length % 4 != 0) {
             throw new InvalidNumberOfCmdArgumentsException();
@@ -120,15 +122,9 @@ public class EdgesLoader {
     }
 
     private static void loadEdgesForDatabase(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
-                                             String queryString, String aliasA, String aliasB) throws XPathExpressionException {
-        String connString = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/connection").trim();
-        String username = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/username").trim();
-        String password = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/password").trim();
-        String database = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/database").trim();
+                                             String queryString, String aliasA, String aliasB, Connection connection) throws XPathExpressionException {
 
-        String url = "jdbc:postgresql://" + connString + "/" + database;
-
-        try (Connection connection = DriverManager.getConnection(url, username, password);
+        try (
              PreparedStatement statement = connection.prepareStatement(queryString);
              ResultSet resultSet = statement.executeQuery()) {
 
@@ -204,10 +200,6 @@ public class EdgesLoader {
         }
     }
 
-
-
-
-// ...
 
     public static void loadEdgesForXML(int rows, List<Integer> keyPositions, List<Integer> valuePositions, String nodeA, String nodeB,
                                        String aliasA, String aliasB) {
@@ -434,7 +426,16 @@ public class EdgesLoader {
                                         DatasourceType datasourceType = findDatasourceType(rows);
 
                                         if (datasourceType == DatasourceType.DB) {
-                                            loadEdgesForDatabase(rows, keyPositions, valuePositions, queryString, aliasA, aliasB);
+
+                                            if (connection == null) {
+                                                String connString = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/connection").trim();
+                                                String username = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/username").trim();
+                                                String password = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/password").trim();
+                                                String database = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/database").trim();
+                                                String url = "jdbc:postgresql://" + connString + "/" + database;
+                                                connection = DriverManager.getConnection(url, username, password);
+                                            }
+                                            loadEdgesForDatabase(rows, keyPositions, valuePositions, queryString, aliasA, aliasB, connection);
                                         } else if (datasourceType == DatasourceType.CSV) {
                                             loadEdgesForCsv(rows, keyPositions, valuePositions, aliasA, aliasB);
                                         } else if (datasourceType == DatasourceType.EXCEL) {
@@ -448,7 +449,7 @@ public class EdgesLoader {
                                         keyPositions.clear();
                                         valuePositions.clear();
                                     }
-                                } catch (XPathExpressionException e) {
+                                } catch (XPathExpressionException | SQLException e) {
                                     throw new RuntimeException(e);
                                 }
                             })
