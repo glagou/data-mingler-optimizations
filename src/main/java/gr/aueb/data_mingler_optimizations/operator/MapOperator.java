@@ -47,7 +47,6 @@ public class MapOperator {
                 throw new RuntimeException(e);
             }
         }
-    }
 
 
 }
