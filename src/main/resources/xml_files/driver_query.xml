@@ -95,7 +95,7 @@
             X006
         </children>
         <transformations>
-            map:python,,/Users/apadelopoulou/Documents/GitHub/data-mingler-optimizations/src/main/resources/python_programs/sentiment.py;aggregate:sum
+            map:python,,/Users/apadelopoulou/Documents/GitHub/data-mingler-optimizations/src/main/resources/python_programs/sentiment_driver.py;aggregate:sum
         </transformations>
         <theta />
         <output>
@@ -156,29 +156,12 @@
             X009
         </label>
         <onnode>
-            int_id
-        </onnode>
-        <children>
-            X010
-        </children>
-        <transformations>
-            filter: $X009$ == 4.094
-        </transformations>
-        <theta />
-        <output>
-            yes
-        </output>
-    </node>
-    <node>
-        <label>
-            X010
-        </label>
-        <onnode>
-            trip_miles
+            gender
         </onnode>
         <children>
         </children>
         <transformations>
+            filter: $X009$ == 'Male'
         </transformations>
         <theta />
         <output>

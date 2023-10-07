@@ -506,62 +506,6 @@
     <edge>
         <headnode>
             <name>
-                pickup_datetime
-            </name>
-            <description>
-                None
-            </description>
-        </headnode>
-        <tailnode>
-            <name>
-                interval
-            </name>
-            <description>
-                None
-            </description>
-        </tailnode>
-        <datasource>
-            myCSV4
-        </datasource>
-        <query/>
-        <key>
-            1
-        </key>
-        <value>
-            2
-        </value>
-    </edge>
-    <edge>
-        <headnode>
-            <name>
-                interval
-            </name>
-            <description>
-                None
-            </description>
-        </headnode>
-        <tailnode>
-            <name>
-                pickup_datetime
-            </name>
-            <description>
-                None
-            </description>
-        </tailnode>
-        <datasource>
-            myCSV4
-        </datasource>
-        <query/>
-        <key>
-            2
-        </key>
-        <value>
-            1
-        </value>
-    </edge>
-    <edge>
-        <headnode>
-            <name>
                 traffic_id
             </name>
             <description>
@@ -1005,6 +949,62 @@
         </key>
         <value>
             7
+        </value>
+    </edge>
+    <edge>
+        <headnode>
+            <name>
+                int_id
+            </name>
+            <description>
+                None
+            </description>
+        </headnode>
+        <tailnode>
+            <name>
+                interval
+            </name>
+            <description>
+                None
+            </description>
+        </tailnode>
+        <datasource>
+            mypostgresql
+        </datasource>
+        <query>SELECT int_id,to_char(date_trunc("hour", pickup_datetime) + interval "1 hour", "YYYY-MM-DD HH24:MI:SS") as rounded_timestamp FROM trip_time WHERE int_id &lt; 100 LIMIT 100</query>
+        <key>
+            1
+        </key>
+        <value>
+            2
+        </value>
+    </edge>
+    <edge>
+        <headnode>
+            <name>
+                interval
+            </name>
+            <description>
+                None
+            </description>
+        </headnode>
+        <tailnode>
+            <name>
+                int_id
+            </name>
+            <description>
+                None
+            </description>
+        </tailnode>
+        <datasource>
+            mypostgresql
+        </datasource>
+        <query>SELECT int_id,to_char(date_trunc("hour", pickup_datetime) + interval "1 hour", "YYYY-MM-DD HH24:MI:SS") as rounded_timestamp FROM trip_time WHERE int_id &lt; 100 LIMIT 100</query>
+        <key>
+            2
+        </key>
+        <value>
+            1
         </value>
     </edge>
 </edges>

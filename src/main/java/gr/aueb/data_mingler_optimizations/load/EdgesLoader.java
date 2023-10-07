@@ -5,7 +5,6 @@ import gr.aueb.data_mingler_optimizations.enumerator.DatabaseSystem;
 import gr.aueb.data_mingler_optimizations.enumerator.DatasourceType;
 import gr.aueb.data_mingler_optimizations.exception.DatasourceNotFoundInDictionaryException;
 import gr.aueb.data_mingler_optimizations.exception.InvalidNumberOfCmdArgumentsException;
-import gr.aueb.data_mingler_optimizations.exception.NoEdgeExistsException;
 import gr.aueb.data_mingler_optimizations.exception.UnableToInitializeDocumentAndXpathException;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 import org.dhatim.fastexcel.reader.Cell;
@@ -46,15 +45,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.List;
-import javax.xml.xpath.XPathExpressionException;
 
-import org.neo4j.driver.*;
 import java.util.concurrent.ForkJoinPool;
-import java.util.stream.IntStream;
-import java.util.ArrayList;
-import java.util.List;
+
 
 public class EdgesLoader {
 
@@ -124,6 +117,7 @@ public class EdgesLoader {
     private static void loadEdgesForDatabase(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
                                              String queryString, String aliasA, String aliasB, Connection connection) throws XPathExpressionException {
 
+        queryString = queryString.replace("\"", "'");
         try (
              PreparedStatement statement = connection.prepareStatement(queryString);
              ResultSet resultSet = statement.executeQuery()) {

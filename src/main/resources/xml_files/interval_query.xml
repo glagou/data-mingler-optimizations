@@ -7,10 +7,10 @@
             X000
         </label>
         <onnode>
-            traffic_id
+            interval
         </onnode>
         <children>
-            X001,X002,X003,X005,X006,X007
+            X001,X002,X004,X005,X007
         </children>
         <transformations />
         <theta />
@@ -21,12 +21,12 @@
             X001
         </label>
         <onnode>
-            base_passenger_fare
+            int_id
         </onnode>
         <children>
         </children>
         <transformations>
-            aggregate:sum
+            aggregate:count
         </transformations>
         <theta />
         <output>
@@ -38,12 +38,13 @@
             X002
         </label>
         <onnode>
-            speed
+            int_id
         </onnode>
         <children>
+            X003
         </children>
         <transformations>
-            aggregate:average
+            aggregate:sum
         </transformations>
         <theta />
         <output>
@@ -55,13 +56,11 @@
             X003
         </label>
         <onnode>
-            int_id
+            base_passenger_fare
         </onnode>
         <children>
-            X004
         </children>
         <transformations>
-            map:python,,/Users/apadelopoulou/Documents/GitHub/data-mingler-optimizations/src/main/resources/python_programs/sentiment_traffic.py;aggregate:sum
         </transformations>
         <theta />
         <output>
@@ -73,7 +72,7 @@
             X004
         </label>
         <onnode>
-            review
+            temp
         </onnode>
         <children>
         </children>
@@ -89,11 +88,13 @@
             X005
         </label>
         <onnode>
-            zone
+            int_id
         </onnode>
         <children>
+            X006
         </children>
         <transformations>
+            map:python,,/Users/apadelopoulou/Documents/GitHub/data-mingler-optimizations/src/main/resources/python_programs/sentiment_interval.py;aggregate:sum
         </transformations>
         <theta />
         <output>
@@ -105,7 +106,7 @@
             X006
         </label>
         <onnode>
-            pickup_datetime
+            review
         </onnode>
         <children>
         </children>
@@ -119,6 +120,24 @@
     <node>
         <label>
             X007
+        </label>
+        <onnode>
+            int_id
+        </onnode>
+        <children>
+            X008
+        </children>
+        <transformations>
+            aggregate:sum
+        </transformations>
+        <theta />
+        <output>
+            yes
+        </output>
+    </node>
+    <node>
+        <label>
+            X008
         </label>
         <onnode>
             trip_miles
