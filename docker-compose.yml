@@ -1,0 +1,22 @@
+version: '3'
+services:
+  neo4j:
+    container_name: testneo4j
+    image: neo4j:latest
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - $HOME/neo4j/data:/data
+      - $HOME/neo4j/logs:/logs
+      - $HOME/neo4j/import:/var/lib/neo4j/import
+      - $HOME/neo4j/plugins:/plugins
+    environment:
+      NEO4J_AUTH: neo4j/12345678
+  java:
+      build:
+        context: .
+        dockerfile: java.dockerfile
+      image: java-program     # Name for the resulting Docker image
+      command: ["./execute_query.sh"] 
+    
