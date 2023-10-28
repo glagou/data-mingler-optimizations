@@ -84,7 +84,7 @@ public class AggregateOperator {
             String graphKey = edge + ":" + key;
             List<String> values = (List<String>) GraphUtils.getElements(graphKey);
 
-            if (!values.isEmpty() && isNumericList(values)) {
+            if (!(values == null) && isNumericList(values)) {
                 double sum = 0;
                 for (String value : values) {
                     double val = Double.parseDouble(value);

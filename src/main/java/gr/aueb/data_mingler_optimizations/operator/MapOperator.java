@@ -32,7 +32,16 @@ public class MapOperator {
                     Object result;
                     PythonInterpreterSingleton.getInterpreter().set("value", value);
                     result = PythonUtils.getValueFromScript(pythonCode.getScript());
-                    GraphUtils.addValueToCollection(graphKey, String.valueOf(result), GraphAdditionMethod.AS_LIST);
+                    if (result != null && result instanceof Number) {
+                        String resultString = String.valueOf(result);
+
+                        // Check if the result is in scientific notation
+                        if (resultString.toLowerCase().contains("e")) {
+                            continue; // Skip adding this value
+                        }
+
+                        GraphUtils.addValueToCollection(graphKey, resultString, GraphAdditionMethod.AS_LIST);
+                    }
                 }
                 PythonInterpreterSingleton.getInterpreter().exec("del value");
             } catch (JepException e) {
