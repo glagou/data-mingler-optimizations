@@ -25,11 +25,12 @@ public class MapOperator {
                 String graphKey = edge + ":" + key;
                 Collection<String> values = GraphUtils.getElements(graphKey);
                 GraphUtils.removeElement(graphKey);
+                if (values == null) continue;
                 for (String value : values) {
                     Object result;
                     interpreter.set("value", value);
                     result = PythonUtils.getValueFromScript(interpreter, pythonCode);
-                    if (result != null && result instanceof Number) {
+                    if (result instanceof Number) {
                         String resultString = String.valueOf(result);
 
                         // Check if the result is in scientific notation
@@ -41,12 +42,10 @@ public class MapOperator {
                         GraphUtils.addValueToCollection(graphKey, resultString, GraphAdditionMethod.AS_LIST);
                     }
                 }
-                interpreter.exec("del value");
             }
-            } catch (JepException e) {
-                throw new RuntimeException(e);
-            }
+            interpreter.exec("del value");
+        } catch (JepException e) {
+            throw new RuntimeException(e);
         }
-
-
+    }
 }

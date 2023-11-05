@@ -41,7 +41,6 @@ public class OperatorUtils {
                 && !transformationsToPerform[0].equalsIgnoreCase(StringConstant.NULL.getValue())) {
 
             Arrays.stream(transformationsToPerform)
-                    .parallel()
                     .forEach(transformation -> {
                         String[] transformationArgs = transformation.split(StringConstant.COLON.getValue(), -1);
                         String operatorName = transformationArgs[0];
