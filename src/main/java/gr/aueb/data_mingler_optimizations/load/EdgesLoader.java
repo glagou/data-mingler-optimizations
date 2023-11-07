@@ -25,6 +25,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static org.neo4j.driver.Values.parameters;
@@ -150,9 +151,51 @@ public class EdgesLoader {
         return xpath.evaluate(xpathExpression, document).trim();
     }
 
+    private static void databaseoptimizer(Connection connection, List<String> aliasa, List<String> aliasb) {
+        String sqlQuery = "SELECT tt.int_id, td.base_passenger_fare, ts.trip_miles, tt.pickup_datetime " +
+                "FROM trip_time tt " +
+                "INNER JOIN trip_speed ts ON tt.int_id = ts.int_id " +
+                "INNER JOIN trip_details td ON tt.int_id = td.int_id;";
+
+        try (
+                PreparedStatement statement = connection.prepareStatement(sqlQuery);
+                ResultSet resultSet = statement.executeQuery()) {
+
+            List<Integer> values = new ArrayList<>();
+            values.add(2);
+            values.add(3);
+            values.add(4);
+
+            while (resultSet.next()) {
+
+                for (Integer num : values) {
 
 
-    private static void loadEdgesForCsv(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
+                    StringBuilder key = new StringBuilder();
+
+                    if (!key.isEmpty()) key.append(":");
+                    key.append(resultSet.getString(1));
+
+                    StringBuilder value = new StringBuilder();
+
+                    if (!value.isEmpty()) value.append(":");
+                    value.append(resultSet.getString(num));
+
+                    GraphUtils.addValueToCollection(aliasa.get(num-2) + "-" + aliasb.get(num-2) + ":" + key, value.toString(),
+                            GraphAdditionMethod.AS_LIST);
+
+                    GraphUtils.addValueToCollection(aliasa.get(num-2) + "-" + aliasb.get(num-2), key.toString(), GraphAdditionMethod.AS_SET);
+                }
+
+
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+        private static void loadEdgesForCsv(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
                                         String aliasA, String aliasB) throws XPathExpressionException {
 
         String fileName = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/filename",
@@ -381,6 +424,9 @@ public class EdgesLoader {
     }
 
     public static void loadEdges(String[] args) {
+        AtomicInteger k = new AtomicInteger();
+        List<String> aliasa = new ArrayList<>();
+        List<String> aliasb = new ArrayList<>();
         ForkJoinPool forkJoinPool = new ForkJoinPool(); // Create a ForkJoinPool
 
         try (Session session = neo4jDriver.session()) {
@@ -421,15 +467,20 @@ public class EdgesLoader {
 
                                         if (datasourceType == DatasourceType.DB) {
 
-                                            if (connection == null) {
-                                                String connString = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/connection").trim();
-                                                String username = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/username").trim();
-                                                String password = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/password").trim();
-                                                String database = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/database").trim();
-                                                String url = "jdbc:postgresql://" + connString + "/" + database;
-                                                connection = DriverManager.getConnection(url, username, password);
-                                            }
+                                             if (connection == null) {
+                                                      try {   Class.forName("org.postgresql.Driver");
+						} catch (ClassNotFoundException e) {
+							System.out.println(e.getMessage());}
+                                                    String connString = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/connection").trim();
+                                                    String username = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/username").trim();
+                                                    String password = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/password").trim();
+                                                    String database = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/database").trim();
+                                                    String url = "jdbc:postgresql://" + connString + "/" + database;
+                                                    connection = DriverManager.getConnection(url, username, password);
+                                                }
                                             loadEdgesForDatabase(rows, keyPositions, valuePositions, queryString, aliasA, aliasB, connection);
+                                            //loadEdgesForDatabase(rows, keyPositions, valuePositions, queryString, aliasA, aliasB, connection);
+
                                         } else if (datasourceType == DatasourceType.CSV) {
                                             loadEdgesForCsv(rows, keyPositions, valuePositions, aliasA, aliasB);
                                         } else if (datasourceType == DatasourceType.EXCEL) {
