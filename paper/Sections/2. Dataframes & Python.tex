@@ -21,3 +21,39 @@ Moreover, Pandas has several limitations that can impact its effectiveness in ha
 
 Some additional general drawbacks of the programming language approach like Python include the following. One of the drawbacks is that end-users who are not proficient in programming may find it challenging to explore data directly, as they would with graphical data exploration tools. Moreover, the lack of reusability in the approach can lead to duplication of effort and maintenance challenges when creating new datasets or performing different analyses. When data sources undergo changes or new data sources are introduced, it becomes challenging to update the code efficiently to accommodate these modifications. This difficulty arises due to the need for manual intervention and adjustments in the existing codebase, which can be time-consuming and error-prone. As data structures and formats evolve, the code must be adapted to handle these alterations, and when new data sources are integrated, the codebase may require significant reworking or rewriting. Additionally, maintaining and updating multiple instances of non-standardized code can become complex and error-prone, making it harder to ensure consistent data processing across the organization. This lack of reusability can hinder collaboration, scalability, and overall efficiency in data-driven projects. 
 
+\subsection{Dataframes expression over DVM} % Old Data Mingler section
+
+DataMingler is a prototype GUI tool to (a) define and manage DVMs, (b) express dataframe queries in a visual and intuitive way, and (c) materialize the DVM (or parts of it) in other logical models – currently only JSON is supported. Data Canvas is the module that enables the creation and manipulation of a DVM by mapping data and processes onto the graph and extending it with new nodes and edges. The data source types that DataMingler currently handles are: relational databases, csv files, excel and stand-alone programs (Java and Python). A DVM is kept in a Neo4j graph database. Dataframe queries can be formulated either textually or visually, using the Query Builder module. In both cases, queries are represented in an XML-based intermediate representation and then parsed and transformed to a key-listalgebraic expression, which is given to the optimizer and an execution plan is generated. Redis is used as the key-value engine for manipulating key-list structures. The JSON Exports module can be used to instantiate model specific databases (currently, JSON is supported). The user selects a node and a breadth-first-search tree rooted on this node is defined. Then the system generates collection of JSON documents corresponding to this tree\cite{chatziantoniou}.
+
+\subsection{Dataframe query operators}
+
+To evaluate a dataframe query such as the one shown in Figure \ref{query1}, some algebraic operators need to be defined. These operators take as input one or more edges is a key-list structure and produce as output a single edge. We can see some of these operators in Definitions 3.3, 3.4, 3.5, 3.6 and 3.7\cite{chatziantoniou}. An in-depth look and analysis of these operators can be seen in the work by Chatzianotniou et. al. (2022)\cite{chatziantoniou}
+
+\textit{Definition 3.3:} \textbf{[Aggregation]} We define an operator called \textit{aggregation}, which gets a key-list structure \(K\) and an aggregate function \(f\) and returns a new key-list structure \(K^'\) constructed as follows: \(\forall k \in keys(K)\), it adds pair \((k, L_k^')\) to \(K^'\), where \(L_k^{'} = [f(L_k)]\), i.e. a list with a single element, the result of the reduced list \(L_k\) according to \(f\). We denote this operator as \(Aggr(K, f)\)\cite{chatziantoniou}. An example of an aggregated function can be the min, max, average, sum or count functions written in any programming language.
+
+\textit{Definition 3.4:} \textbf{[Filtering]} We define an operator called \textit{filtering}, which gets a key-list structure \(K\) and a condition \(\theta\) defined on a single element of a list (a string) and returns a new key-list structure \(K^'\) constructed as follows: \(\forall k \in keys(K)\), it adds to \(K^'\) a pair \((k, L_k^{'})\), where \(L_k^'\) contains all \(x \in L_k\) such that \(\theta(x)\) is true. We denote this operator as \(Filter(K, \theta)\)\cite{chatziantoniou}.
+
+\textit{Definition 3.5:} \textbf{[Mapping]} we define an operator, called \textit{mapping}, which gets as key-list structure \(K\) and a function \(f\) with a signature \texttt{string f(x:string)} and returns a new key-list structure \(K^'\) constructed as follows: \(\forall k \in keys(K)\), it adds to \(K^'\) a pair \((k, L_k^{'})\), where \(L_k^{'} = [f(x): x \in L_k]\), i.e. each element \(x\) in \(L_k\) is replaced by \(f(x)\). We denote this operator as \(Map(K, f)\)\cite{chatziantoniou}. An example of a mapping can be the transformation of customer reviews to sentiment scores using sentiment analysis.
+
+\textit{Definition 3.6:} \textbf{[RollupJoin]} We define an operator, called \textit{RollupJoin}, which gets two key-list structures \(K_1\) and \(K_2\) and returns a new key-list structure \(K\) constructed as follows: \(\forall k \in keys(K_1)\), it adds to \(K\) a pair \((k, L_k)\), where \(L_k = \oplus_{x \in list(k, K_1)}list(x, K_2)\), \(\oplus\) stands for list concatenation. We denote this operator as \(rollUpJoin(K_1, K_2)\)\cite{chatziantoniou}.
+
+\textit{Definition 3.7:} \textbf{[ThetaCombine]} Given:
+    \begin{itemize}
+        \item a list \(O\) of key-list structures \(K_1, K_2, ..., K_n\), called the \textit{output} list (can be empty)
+        \item a list \(S\) of key-list structures \(K_1^{'}, K_2^{'}, ..., K_m^{'}\), called the \textit{selection} list (can be empty)
+        \item a boolean expression \(\theta(k, l_1, l_2, ..., l_m)\) involving \(k\) (an atomic value), \(l_1, l_2, ..., l_m\) (lists of values), called the \textit{selection condition}
+    \end{itemize}
+we define an operator called \textit{ThetaCombine}, denoted as \(thetaCombine(O; S; \theta)\), which returns a key-list structure \(K\) constructed as follows:
+\begin{itemize}
+\item[] \(\forall k \in keys(K_1)\cap...\cap keys(K_n)\cap keys(K_1^{'}) \cap...\cap keys(K_m^{'})\):
+
+   \quad if \((\theta (k, list(k, K_1^{'}), ..., list(k, K_m^{'})))\) is true:
+        
+        \quad \quad add a pair \((k, L_k)\) to \(K\), where:
+            
+            \quad \quad \quad if \(O\) is empty then \(L_k = []\) (the empty list)
+            
+            \quad \quad \quad else \(L_k = \oplus_{i = 1, 2, ..., n}list(k, K_i)\)\cite{chatziantoniou}
+\end{itemize}
+
+

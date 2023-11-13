@@ -12,3 +12,78 @@ To tackle this challenge, we propose the Data Virtual Machine (DVM), a novel gra
 This paper's contributions encompass the introduction of the DVM as a novel conceptual model, a declarative approach to dataframing in analytics environments, and the proposal of an algebraic framework for efficient query evaluation along with concurrency and parallelization optimizations in the calculations. A case study validates the effectiveness of DVMs and the visual DVM query language in effortlessly creating advanced dataframes analysis that would otherwise require programming skills. Moreover, a benchmarking of the DataMigler tool is performed against the traditional Python-notebook-based implementations that demonstrate the superior performance of DataMigler in the query evaluation.
 
 The subsequent sections elaborate on key analytics environment concepts, present the DVM's formal definition and intuitive explanation, introduce DVM dataframe queries and the algebraic framework for their evaluation, discuss query evaluation and optimization, showcase a case study as a proof-of-concept, benchmarking of the tool, and conclude with limitations and future directions for this innovative approach.
+
+\subsection{Motivation example setup queries}
+
+To execute our experiments and showcase the usage of a DVM we used the data from the model shown in Figure \ref{dvm2}. They represent taxi rides in New York City in 2022, connected to relevant weather and traffic data. The weather attributes shown in the model, \texttt{snowProb, humidity, rainProb, temperature, datetime, location},  were collected by the \href{https://www.visualcrossing.com/}{Visual Crossing} service for the year 2022 in the city of New York. The traffic data, \texttt{meanSpeed, meanCongestion, datetime, location}, were gathered from \href{https://opendata.cityofnewyork.us/}{NYC Open Data}, which publishes free, public, up-to-date datasets from the city of New York. The attributes concerning the taxi rides, \texttt{DOLocation, PULocation, passengerFare, driverTip, requestDatetime, triverPay, tripTime, tripMiles, airportFee}, were taken from a dataset published by the \href{https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page}{NYC Gov} website. The datasets from NYC Open Data and NYC Gov used an area code to describe location. In order to match datetime and location data with the other data sources, the area codes were mapped using a complementary dataset to NYC districts and specific areas. After the mapping, the \texttt{requestDatetime} and \texttt{PULocation} from the taxi data attributes were concatenated and hashed using the MD5 hashing method to produce the \texttt{locationDatetimeID} attribute The same was done to the \texttt{location} and \texttt{datetime} attributes for weather and traffic. This action produced a primary attribute that connected all different data sources. Finally, the \texttt{passengerReview} attribute and the \texttt{driverID, gender, vehicleModel, driverUID} were added from two \href{https://www.kaggle.com/}{Kaggle} dataseta that contained customer reviews and driver data for Uber rides. Because most of our data was in CSV form we did some refactoring to test our assumptions under different kinds of data sources. Firstly, the dataset containing the taxi rides was turned into a PostreSQL relational database. The database contained four tables \texttt{trip\_details, trip\_time, trip\_speed} and \texttt{trip\_location}. The attributes were split between those tables and had as primary key a unique integer number called \texttt{intID} and as secondary key the \texttt{locationDatetimeID}. A schema representation can be seen in Figure \ref{schema}. For the rest of the data, the passenger review data were turned in XML format, the weather data in Excel and the traffic and Uber drivers data were kept in a CSV format.
+
+\begin{center}
+    \begin{figure}[h]
+        \includegraphics[scale=0.3]{figures/schema.png}
+        \caption{Schema representation of taxi rides relations database.}
+        \label{schema}
+    \end{figure}
+\end{center}
+
+It is worth noting that the datasets contained many more attributes than the ones shown in Figure \ref{dvm2}. The purpose of the graphical representation is to highlight the main fields used in our analysis and create a comprehensive conceptual image. Also, the names of the attributes shown in Figure \ref{dvm2} do not match accurately to the ones in the datasets. This was done in order to have more easily understandable naming conventions across the different data sources in the conceptual image that we created.
+
+\begin{center}
+    \begin{figure}[h]
+        \includegraphics[scale=0.3]{generalDVMView}
+        \caption{DVM view of our data.}
+        \label{dvm2}
+    \end{figure}
+\end{center}
+
+With that in mind, a dataframe query over the data is defined by Chatziantoniou et. al. (2022)\cite{chatziantoniou} in Definition 3.2.
+
+\textit{Definition 3.2:} \textbf{[Dataframe Queries]} Given a DVM \(G = \{A, S\}\), a dataframe query is a tree structure \(Q\), defined as:
+
+\begin{itemize}
+    \item each node \(N\) of \(Q\) has a \textit{name} and a \textit{label}: the name is unique within \(Q\) and the label is an attribute of \(G\); these are denoted as \(N.name\) and \(N.label\) respectively
+    \item for each edge \(N \to N^'\) in \(Q\), there exists an edge: \(label(N) \to label(N^')\) in \(D\)
+    \item each edge \(e\) of \(Q\) is annotated with a list of transformations, called the \textit{transformations string}, denoted as \(e.transformations\)
+    \item each node \(N\) of \(Q\) is annotated with the \textit{selection condition}, which is either the special value \texttt{'True'} of a python like logical expression, where \(N\) and any of \(N\)'s children may appear as identifiers within this expression; the selection condition of \(N\) is denoted as \(N.selection\)
+    \item each node, except the root, has an \textit{output label}, which has the value \texttt{'true'} or \texttt{'false'}; if the output label of a node is \texttt{'true'}, then all nodes in the path from the root to that node, except the root, must have a \texttt{'true'} output label; the output label of the node is denoted as \(N.output\)
+\end{itemize}
+
+An example of a dataframe query over the data described above can be seen in Figure \ref{query1}. The root could also be any other attribute of our data, such as \texttt{meanSpeed, passengerReview} etc. 
+
+\begin{center}
+    \begin{figure}[h]
+        \includegraphics[scale=0.3]{query1}
+        \caption{Query tree representation.}
+        \label{query1}
+    \end{figure}
+\end{center}
+
+The data that an organisation produces can be represented by a Data Virtual Machine (DVM), a conceptual model based on graphs. It provides for quick, ad hoc, on-demand data model development and offers schema flexibility. DVMs provide data sharing, data portability, and a single view of any entity. Data virtualization is an industry concept that is only starting to take off. Data is portrayed in a DVM as nodes and edges in a graph, where the nodes stand in for attributes and entities. By assigning attributes from various data sources to entities or by performing computations, DVMs can be swiftly created. They provide a formalism that makes it possible for non-IT experts to participate in dataframing duties and they enable data exchange and data portability. DVMs can be created quickly and represent the aggregate of calculations carried out on the data infrastructure. The data retrieval operations or computations made on the already-existing data determine the schema of a DVM. They offer an algebraic framework for query evaluation with proven advantages and permit declarative and visual description of dataframes\cite{chatziantoniou}.
+
+\subsection{Data Virtual Machines}
+
+To understand how a DVM works, it can be thought of as an altered ER (Entity-Relationship) model. In an ER model, entities are represented at a higher level, and relationships are depicted between entities using relationship modeling constructs. However, in a DVM, all attributes are \textit{derived} and \textit{multi-valued}, and entities are represented by their \textit{primary attributes}. This means that in a DVM, each node can be considered either as an entity or an attribute, depending on the analysis perspective. A DVM consists of \textit{mappings}, that are represented as edges, between \textit{attribute domains}, that are represented by nodes. Mappings appear as data processes with a 2-dimensional output (the attribute domains)\cite{chatziantoniou}.
+
+For example, in an ER model, attributes are directly associated with entities, and relationships are defined separately. In contrast, in a DVM, attributes are derived through computations and bound to entities via their primary attribute. The primary key of an ER entity now represents the entity itself as a node, associated with other nodes that represent the entity's attributes.
+
+While ER models follow a top-down approach, starting from conceptual design and going towards a logical model, DVMs follow a bottom-up approach, starting from existing data and constructing a conceptual model based on the computations performed on that data\cite{chatziantoniou}.
+
+\textit{Definition 3.1:} \textbf{[Data Virtual Machines]} Assume a collection \(A\) of \(n\) domains \(A_1, A_2, ..., A_n\) called \textit{attributes}. Assume a collection \(S\) of \(m\) multisets \(S_1, S_2, ..., S_m\), where each multiset \(S\) has the form: \(S = \{(u, v): u \in A_i, v \in A_j, i, j \in \{1, 2, ..., n\}\}\), called \textit{data processing tasks}. For each such \(S \in \{S_1, S_2, ..., S_m\}\) we define two key-list structures, \(K^S_i_j\) and \(K^S_j_i\) as:
+\begin{itemize}
+    \item[] \(K^S_i_j\): for each \(u\) in the set \(\{u: (u, v) \in S\}\) we define the list \(L_u = \{v: (u, v) \in S\}\) and \((u, L_u)\) is appended to \(K^S_i_j\). \(K^S_j_i\) is similarly defined.
+\end{itemize}
+The DVM is a multi-graph \(G = \{A, S\}\) constructed as:
+\begin{itemize}
+    \item each attribute becomes a node in \(G\)
+    \item for each data processing task \(S\) we draw two edges \(A_i \to A_j\) and \(A_j \to A_i\), labeled with \(K^S_i_j\) and \(K^S_j_i\) respectively.
+\end{itemize}
+The key-list structure that corresponds to an edge \(e: A_i \to A_j\) is denoted as \(KL(e\), with schema \((A_i, A_j)\)\cite{chatziantoniou}.
+
+\textit{Example 3.1:} Assume two attributes, \texttt{rideID} and \texttt{locationDatetimeID} and the output of te SQL query "\texttt{SELECT rideID, locationDatetimeID FROM taxiRides}" that maps taxi rides and datetime specific locations. The key-list structure of the nodes and edges created by the attributes can be seen in Figure \ref{dvm1}.
+
+\begin{center}
+    \begin{figure}[h]
+        \includegraphics[scale=0.4]{erToDVMExample}
+        \caption{ER to DVM representation.}
+        \label{dvm1}
+    \end{figure}
+\end{center}
