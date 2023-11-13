@@ -1,0 +1,190 @@
+\documentclass[journal]{IEEEtran} % use the `journal` option for ITherm conference style
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{url}
+\graphicspath{ {./figures/} }
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=black,
+    citecolor=black
+    }
+
+\urlstyle{same}
+%\usepackage{draftwatermark}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+
+%\SetWatermarkText{DRAFT} % Watermark text
+%\SetWatermarkAngle{45}   % Angle at which watermark appears
+%\SetWatermarkLightness{0.93} % Opacity (0 = fully transparent, 1 = fully opaque)
+%\SetWatermarkScale{1}    % Watermark scale
+
+
+
+
+\begin{document}
+
+\title{Dataframes Unleashed: Unlocking Effortless Modeling and Performance in Data Analysis with Data Virtual Machines (DVMs)
+% delete or comment-out the following line before submission
+%{\footnotesize \textsuperscript{*}Note: Sub-titles are not captured in Xplore and should not be used}
+\thanks{Identify applicable funding agency here. If none, delete this.}
+}
+
+\author{%%%% author names
+    \IEEEauthorblockN{1\textsuperscript{st} Given Name Surname}% first author
+    , \IEEEauthorblockN{2\textsuperscript{nd} Given Name Surname}% delete this line if not needed
+    , \IEEEauthorblockN{3\textsuperscript{rd} Given Name Surname}% delete this line if not needed
+    % duplicate the line above as many times as needed to list all authors
+    \\%%%% author affiliations
+    \IEEEauthorblockA{\textit{dept. name of organization (of Aff.), City, Country}}\\% first affiliation
+    \IEEEauthorblockA{\textit{dept. name of organization (of Aff.), City, Country if needed}}\\% delete this line if not needed
+    % duplicate the line above as many times as needed to list all affiliations
+    %%%% corresponding author contact details
+    \IEEEauthorblockA{email address or ORCID of corresponding author(s)}
+}
+
+\maketitle
+
+\begin{abstract}
+
+\input{Sections/ABSTRACT}
+
+\end{abstract}
+
+\begin{IEEEkeywords}
+    Dataframes, Data Analysis, Data Virtualization, Graph Data Model, Data Virtual Machines, Efficient Evaluation, User-Friendly Front-End, Big Data, Modeling, Benchmarking, Python, Data Exploration, Insights, Performance
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+\input{Sections/1.INTRODUCTION}
+
+\section{Dataframes \& Python}
+
+\input{Sections/2. Dataframes & Python}
+
+\section{Query evaluation \& optimization}
+
+\input{Sections/3.Query evaluation & optimization}
+
+\newpage
+\section{Related Work}
+
+\input{Sections/4.Related Work}
+
+\begin{thebibliography}{00}            
+    \bibitem{Aleksic2019}
+    Jasna Soldic Aleksic, Biljana Chroneos Krasavac, and Ema Karamata,
+    \emph{Business analytics: new concepts and trends},
+    \emph{Management: Journal of Sustainable Business and Management Solutions in Emerging Economies}, 
+    vol. 25, 
+    July 2019,
+    doi: \url{10.7595/management.fon.2019.0013}.
+    \bibitem{GANDOMI2015137}
+    Amir Gandomi and Murtaza Haider,
+    \emph{Beyond the hype: Big data concepts, methods, and analytics},
+    \emph{International Journal of Information Management}, 
+    vol. 35, 
+    no. 2, 
+    pp. 137-144, 
+    2015,
+    ISSN 0268-4012,
+    doi: \url{https://doi.org/10.1016/j.ijinfomgt.2014.10.007}
+    \bibitem{Mauro2016}
+    Andrea De Mauro, Marco Greco, Michele Grimaldi, and Giacomo Nobili,
+    \emph{Beyond Data Scientists: a Review of Big Data Skills and Job Families},
+    in \emph{Proceedings of the Conference Name}, % Replace "Conference Name" with the actual conference name if available
+    June 2016.
+    \bibitem{Bhadani2016}
+    A. Bhadani and D. Jothimani,
+    \emph{Big data: Challenges, opportunities and realities},
+    In M.K. Singh and D.G. Kumar (Eds.),
+    \emph{Effective Big Data Management and Opportunities for Implementation},
+    pp. 1-24,
+    Pennsylvania, USA,
+    IGI Global,
+    2016.
+    \bibitem{petersohn2020scalable}
+    Devin Petersohn, Stephen Macke, Doris Xin, William Ma, Doris Lee, Xiangxi Mo, Joseph E. Gonzalez, Joseph M. Hellerstein, Anthony D. Joseph, and Aditya Parameswaran,
+    \emph{Towards Scalable Dataframe Systems},
+    \emph{arXiv preprint},
+    eprint: 2001.00888,
+    archivePrefix: arXiv,
+    primaryClass: cs.DB,
+    2020.    
+    \bibitem{perez2015project}
+    Fernando Perez and Brian E. Granger,
+    \emph{Project Jupyter: Computational narratives as the engine of collaborative data science},
+    Retrieved September, 11(207):108,
+    2015.
+    \bibitem{abadi2016beckman}
+    D. Abadi and others,
+    \emph{The Beckman Report on Database Research},
+    \emph{Communications of the ACM},
+    vol. 59,
+    pp. 692–99,
+    February 2016.
+    \bibitem{chambers1992statistical}
+    M. Chambers, T. J. Hastie, and others,
+    \emph{Statistical Models in S},
+    volume 251,
+    Wadsworth \& Brooks/Cole Advanced Books \& Software,
+    Pacific Grove, CA,
+    1992.
+    \bibitem{chambers1990statistical}
+    J. Chambers, T. Hastie, and D. Pregibon,
+    \emph{Statistical Models in S},
+    In K. Momirović and V. Mildner, editors,
+    \emph{Compstat},
+    pages 317–321,
+    Heidelberg,
+    1990,
+    Physica-Verlag HD.
+    \bibitem{McKinney2011}
+    Wes McKinney,
+    \emph{pandas: a Foundational Python Library for Data Analysis and Statistics},
+    \emph{Python High Performance Science Computer},
+    January 2011.
+    \bibitem{abiteboul1995foundations}
+    S. Abiteboul, R. Hull, and V. Vianu,
+    \emph{Foundations of Databases},
+    volume 8,
+    Addison-Wesley,
+    Reading,
+    1995.
+    \bibitem{nelluri2021limitations}
+    Ramesh Nelluri,
+    \emph{What are the limitations of pandas?},
+    \emph{Insights and Data},
+    Published on April 10, 2021,
+    Available at: \url{https://insightsndata.com/what-are-the-limitations-of-pandas-35d462990c43}.
+    \bibitem{sinthong2019aframe}
+    Phanwadee Sinthong and Michael J. Carey,
+    \emph{AFrame: Extending DataFrames for Large-Scale Modern Data Analysis (Extended Version)},
+    \emph{arXiv preprint},
+    eprint: 1908.06719,
+    archivePrefix: arXiv,
+    primaryClass: cs.DB,
+    2019.
+    \bibitem{chatziantoniou}
+    D. Chatziantoniou, V. Kantere, N. Antoniou, A. Gatzia,
+    \emph{Data Virtual Machines: Simplifying Data Sharing,
+    Exploration \& Querying in Big Data Environments},
+    IEEE International Conference on Big Data (Big Data),
+    2022.
+    
+\end{thebibliography}
+
+
+
+
+\end{document}
