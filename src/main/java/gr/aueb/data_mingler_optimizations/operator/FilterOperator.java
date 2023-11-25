@@ -20,11 +20,12 @@ public class FilterOperator {
 
         String edge = rootNode + "-" + childNode;
         Set<String> keys = (Set<String>) GraphUtils.getElements(edge);
-        try (Interpreter interpreter = new SharedInterpreter()) {
-            for (String key : keys) {
-                String graphKey = edge + ":" + key;
-                Collection<String> values = GraphUtils.getElements(graphKey);
-                GraphUtils.removeElement(graphKey);
+        keys.parallelStream().forEach(key -> {
+            String graphKey = edge + ":" + key;
+            Collection<String> values = GraphUtils.getElements(graphKey);
+            GraphUtils.removeElement(graphKey);
+            if (values == null) return;
+            try (Interpreter interpreter = new SharedInterpreter()) {
                 for (String value : values) {
                     Object value2;
                     if (value.matches("-?\\d+(\\.\\d+)?")) {
@@ -38,10 +39,9 @@ public class FilterOperator {
                         GraphUtils.addValueToCollection(graphKey, value, GraphAdditionMethod.AS_LIST);
                     }
                 }
-                interpreter.exec("del Lvalue");
+            } catch (JepException e) {
+                System.out.println(e.getMessage());
             }
-        } catch (JepException e) {
-            System.out.println(e.getMessage());
-        }
+        });
     }
 }

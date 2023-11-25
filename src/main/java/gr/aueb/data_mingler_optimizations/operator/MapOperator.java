@@ -20,32 +20,31 @@ public class MapOperator {
 
         String edge = rootNode + "-" + childNode;
         Set<String> keys = (Set<String>) GraphUtils.getElements(edge);
-        try (Interpreter interpreter = new SharedInterpreter()) {
-            for (String key : keys) {
+
+            keys.parallelStream().forEach(key -> {
                 String graphKey = edge + ":" + key;
                 Collection<String> values = GraphUtils.getElements(graphKey);
                 GraphUtils.removeElement(graphKey);
-                if (values == null) continue;
-                for (String value : values) {
-                    Object result;
-                    interpreter.set("value", value);
-                    result = PythonUtils.getValueFromScript(interpreter, pythonCode);
-                    if (result instanceof Number) {
-                        String resultString = String.valueOf(result);
+                if (values == null) return;
+                try (Interpreter interpreter = new SharedInterpreter()) {
+                    for (String value : values) {
+                        Object result;
+                        interpreter.set("value", value);
+                        result = PythonUtils.getValueFromScript(interpreter, pythonCode);
+                        if (result instanceof Number) {
+                            String resultString = String.valueOf(result);
+                            // Check if the result is in scientific notation
+                            if (resultString.toLowerCase().contains("e")) {
+                                continue; // Skip adding this value
+                            }
 
-                        // Check if the result is in scientific notation
-                        if (resultString.toLowerCase().contains("e")) {
-                            interpreter.exec("del value");
-                            continue; // Skip adding this value
+                            GraphUtils.addValueToCollection(graphKey, resultString, GraphAdditionMethod.AS_LIST);
                         }
-
-                        GraphUtils.addValueToCollection(graphKey, resultString, GraphAdditionMethod.AS_LIST);
                     }
+                } catch (JepException e) {
+                    throw new RuntimeException(e);
                 }
-            }
-            interpreter.exec("del value");
-        } catch (JepException e) {
-            throw new RuntimeException(e);
-        }
+            });
+
     }
 }
