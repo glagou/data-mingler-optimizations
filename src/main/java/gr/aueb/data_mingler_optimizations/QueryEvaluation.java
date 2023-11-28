@@ -222,6 +222,7 @@ public class QueryEvaluation {
     private static void evaluateChildAndExecuteTransformations() {
         // Create a parallel stream to evaluate and transform child nodes concurrently
         childNodes
+                .parallelStream()
                 .forEach(childNode -> {
             evaluateChild(rootNode, childNode);
             System.out.println("Finished evaluating child: " + childNode);
