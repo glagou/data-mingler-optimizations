@@ -4,15 +4,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Script {
-    private final String[] script;
+    private String script;
 
     public Script(String script) {
         if (isPath(script)) {
-            this.script = readScriptFromFile(Path.of(script)).toArray(new String[0]);
+            this.script = readScriptFromFile(Path.of(script));
         } else {
-            this.script = script.split("\n");
+            this.script = script;
         }
     }
 
@@ -20,23 +21,28 @@ public class Script {
         return script.endsWith(".py");
     }
 
-    private List<String> readScriptFromFile(Path path) {
+    private String readScriptFromFile(Path path) {
         List<String> lines;
         try {
             lines = Files.readAllLines(path);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return lines;
+        lines = lines.stream()
+                .filter(line -> !line.trim().isEmpty())
+                .collect(Collectors.toList());
+        return String.join(";", lines);
     }
 
-    public String[] getScript() {
+    public String getScript() {
         return script;
     }
 
     public void renameScriptVariable(String oldName, String newName) {
-        for (int i = 0; i < script.length; i++) {
-            script[i] = script[i].replace(oldName, newName).trim();
-        }
+        this.script = script.replace(oldName, newName);
+    }
+
+    public void createVariable(String name, String value) {
+        this.script = name + " = " + value + ";" + script;
     }
 }
