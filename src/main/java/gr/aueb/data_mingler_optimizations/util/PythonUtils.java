@@ -6,16 +6,21 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.*;
+import java.util.function.Supplier;
 
 public class PythonUtils {
     private static final int numberOfCores = Runtime.getRuntime().availableProcessors();
     private static final ExecutorService executor = Executors.newFixedThreadPool(numberOfCores);
 
-    public static CompletableFuture<String> executePython(Script pythonCode) {
-        return CompletableFuture.supplyAsync(() -> createPythonProcess(pythonCode), executor);
+    public static void shutdownExecutor() {
+        executor.shutdown();
     }
 
-    private static String createPythonProcess(Script pythonCode) {
+    public static CompletableFuture<String> executePython(Supplier<String> function) {
+        return CompletableFuture.supplyAsync(function, executor);
+    }
+
+    public static String createPythonProcess(Script pythonCode) {
         String code = pythonCode.getScript();
         ProcessBuilder processBuilder = new ProcessBuilder("python3", "-c", code);
         try {

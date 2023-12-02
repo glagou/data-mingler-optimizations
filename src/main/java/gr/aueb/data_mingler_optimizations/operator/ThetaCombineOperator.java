@@ -5,33 +5,27 @@ import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
 import gr.aueb.data_mingler_optimizations.python.Script;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 import gr.aueb.data_mingler_optimizations.util.PythonUtils;
-import jep.Interpreter;
-import jep.JepException;
-import jep.SharedInterpreter;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public class ThetaCombineOperator {
 
-    private static boolean evaluateTheta(String theta, String key, String rootNode, String[] allChildNodes) {
-        try (Interpreter interpreter = new SharedInterpreter()) {
-            if (theta.equals("True")) return true;
+    private static CompletableFuture<Boolean> evaluateTheta(String theta, String key, String rootNode, String[] allChildNodes) {
+        if (theta.equalsIgnoreCase("true")) return CompletableFuture.completedFuture(true);
 
-            Script pythonCode = new Script(theta);
-            for (String childNode : allChildNodes) {
-                String element = ((List<String>) GraphUtils.getElements(rootNode + '-' + childNode + ':' + key)).get(0);
-                pythonCode.renameScriptVariable('$' + childNode + '$', element);
-            }
-            interpreter.set("key", key);
-            boolean output = PythonUtils.evalFromScript(interpreter, pythonCode);
-            interpreter.exec("del key");
-            return output;
-        } catch (JepException e) {
-            System.out.println(e.getMessage());
-        }
-        return false;
+        return PythonUtils.executePython(() -> {
+                    Script pythonCode = new Script(theta);
+                    for (String childNode : allChildNodes) {
+                        String element = ((List<String>) GraphUtils.getElements(rootNode + '-' + childNode + ':' + key)).get(0);
+                        pythonCode.renameScriptVariable('$' + childNode + '$', element);
+                    }
+                    pythonCode.createVariable("key", key);
+                    return PythonUtils.createPythonProcess(pythonCode);
+                })
+                .thenApply(result -> result != null && result.equalsIgnoreCase("true"));
     }
 
     public static void run(String rootNode, String newChildNode, String allChildNodesCL, String outputChildNodesCL,
@@ -60,23 +54,28 @@ public class ThetaCombineOperator {
 
         String newEdge = rootNode + '-' + newChildNode;
 
+        List<CompletableFuture<Void>> futureList = new ArrayList<>();
         for (String key : keys) {
-            if (evaluateTheta(theta, key, rootNode, allChildNodes)) {
-                GraphUtils.addValueToCollection(newEdge, key, GraphAdditionMethod.AS_SET);
-                if (hasOutput) {
-                    for (String childNode : outputChildNodes) {
-                        String nextEdge = rootNode + '-' + childNode + ':' + key;
-                        Collection<String> elements = GraphUtils.getElements(nextEdge);
-                        if (elements != null) {
-                            List<String> values = new ArrayList<>(elements);
-                            GraphUtils.setCollection(newEdge + ':' + key, values);
+            CompletableFuture<Void> future = evaluateTheta(theta, key, rootNode, allChildNodes).thenAccept(result -> {
+                if (result) {
+                    GraphUtils.addValueToCollection(newEdge, key, GraphAdditionMethod.AS_SET);
+                    if (hasOutput) {
+                        for (String childNode : outputChildNodes) {
+                            String nextEdge = rootNode + '-' + childNode + ':' + key;
+                            Collection<String> elements = GraphUtils.getElements(nextEdge);
+                            if (elements != null) {
+                                List<String> values = new ArrayList<>(elements);
+                                GraphUtils.setCollection(newEdge + ':' + key, values);
+                            }
                         }
+                    } else {
+                        GraphUtils.addValueToCollection(newEdge + ':' + key, key, GraphAdditionMethod.AS_SET);
                     }
-                } else {
-                    GraphUtils.addValueToCollection(newEdge + ':' + key, key, GraphAdditionMethod.AS_SET);
                 }
-            }
+            });
+            futureList.add(future);
         }
+        CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0])).join();
 
         Instant finish = Instant.now();
         long timeElapsed = Duration.between(start, finish).toMillis();

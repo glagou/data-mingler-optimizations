@@ -42,7 +42,8 @@ public class Script {
         this.script = script.replace(oldName, newName);
     }
 
+    // TODO: Not reusable. Only for the case of string values.
     public void createVariable(String name, String value) {
-        this.script = name + " = " + value + ";" + script;
+        this.script = name + "=\"" + value + "\";" + script;
     }
 }
