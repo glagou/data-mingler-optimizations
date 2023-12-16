@@ -14,37 +14,34 @@ import java.util.Set;
 public class MapOperator {
 
     public static void run(String rootNode, String childNode, String script) {
+        try (Interpreter interpreter = new SharedInterpreter()) {
+            Script pythonCode = new Script(script);
+            pythonCode.renameScriptVariable('$' + childNode + '$', "value");
 
-        Script pythonCode = new Script(script);
-        pythonCode.renameScriptVariable('$' + childNode + '$', "value");
-
-        String edge = rootNode + "-" + childNode;
-        Set<String> keys = (Set<String>) GraphUtils.getElements(edge);
-
-            keys.parallelStream().forEach(key -> {
+            String edge = rootNode + "-" + childNode;
+            Set<String> keys = (Set<String>) GraphUtils.getElements(edge);
+            for (String key : keys) {
                 String graphKey = edge + ":" + key;
                 Collection<String> values = GraphUtils.getElements(graphKey);
                 GraphUtils.removeElement(graphKey);
                 if (values == null) return;
-                try (Interpreter interpreter = new SharedInterpreter()) {
-                    for (String value : values) {
-                        Object result;
-                        interpreter.set("value", value);
-                        result = PythonUtils.getValueFromScript(interpreter, pythonCode);
-                        if (result instanceof Number) {
-                            String resultString = String.valueOf(result);
-                            // Check if the result is in scientific notation
-                            if (resultString.toLowerCase().contains("e")) {
-                                continue; // Skip adding this value
-                            }
-
-                            GraphUtils.addValueToCollection(graphKey, resultString, GraphAdditionMethod.AS_LIST);
+                for (String value : values) {
+                    Object result;
+                    interpreter.set("value", value);
+                    result = PythonUtils.getValueFromScript(interpreter, pythonCode);
+                    if (result instanceof Number) {
+                        String resultString = String.valueOf(result);
+                        // Check if the result is in scientific notation
+                        if (resultString.toLowerCase().contains("e")) {
+                            continue; // Skip adding this value
                         }
-                    }
-                } catch (JepException e) {
-                    throw new RuntimeException(e);
-                }
-            });
 
+                        GraphUtils.addValueToCollection(graphKey, resultString, GraphAdditionMethod.AS_LIST);
+                    }
+                }
+            }
+        } catch (JepException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
