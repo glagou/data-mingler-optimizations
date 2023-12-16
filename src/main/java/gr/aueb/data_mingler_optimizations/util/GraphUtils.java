@@ -6,10 +6,11 @@ import gr.aueb.data_mingler_optimizations.enumerator.KeysMode;
 import gr.aueb.data_mingler_optimizations.singleton.GraphManagerSingleton;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
 
 public class GraphUtils {
 
-    private static final Map<String, Collection<String>> GRAPH = GraphManagerSingleton.getGraph();
+    private static final ConcurrentMap<String, Collection<String>> GRAPH = GraphManagerSingleton.getGraph();
 
     public static Collection<String> combineKeys(String rootNode, List<String> childNodes) {
         Set<String> keys = null;

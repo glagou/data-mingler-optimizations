@@ -3,9 +3,9 @@ package gr.aueb.data_mingler_optimizations.operator;
 import gr.aueb.data_mingler_optimizations.enumerator.GraphAdditionMethod;
 import gr.aueb.data_mingler_optimizations.enumerator.StringConstant;
 import gr.aueb.data_mingler_optimizations.python.Script;
-import gr.aueb.data_mingler_optimizations.singleton.PythonInterpreterSingleton;
 import gr.aueb.data_mingler_optimizations.util.GraphUtils;
 import gr.aueb.data_mingler_optimizations.util.PythonUtils;
+import jep.Interpreter;
 import jep.JepException;
 import jep.SharedInterpreter;
 
@@ -17,18 +17,19 @@ public class ThetaCombineOperator {
 
     private static boolean evaluateTheta(String theta, String key, String rootNode, String[] allChildNodes) {
         if (theta.equals("True")) return true;
-        try {
-            Script pythonCode = new Script(theta);
-            for (String childNode : allChildNodes) {
-                String element = ((List<String>) GraphUtils.getElements(rootNode + '-' + childNode + ':' + key)).get(0);
-                pythonCode.renameScriptVariable('$' + childNode + '$', element);
-            }
-            PythonInterpreterSingleton.getInterpreter().set("key", key);
-            return PythonUtils.evalFromScript(pythonCode.getScript());
+
+        Script pythonCode = new Script(theta);
+        for (String childNode : allChildNodes) {
+            String element = ((List<String>) GraphUtils.getElements(rootNode + '-' + childNode + ':' + key)).get(0);
+            pythonCode.renameScriptVariable('$' + childNode + '$', element);
+        }
+        try (Interpreter interpreter = new SharedInterpreter()) {
+            interpreter.set("key", key);
+            boolean output = PythonUtils.evalFromScript(interpreter, pythonCode);
+            interpreter.exec("del key");
+            return output;
         } catch (JepException e) {
             System.out.println(e.getMessage());
-        } finally {
-            PythonInterpreterSingleton.getInterpreter().exec("del key");
         }
         return false;
     }
@@ -41,9 +42,11 @@ public class ThetaCombineOperator {
         String[] allChildNodes = allChildNodesCL.split(StringConstant.COMMA.getValue());
         String[] outputChildNodes = outputChildNodesCL.split(StringConstant.COMMA.getValue());
 
-        String theta = "True";
+        String theta;
         if (!thetaCL.isEmpty()) {
             theta = thetaCL.replace('$' + rootNode + '$', "key");
+        } else {
+            theta = "True";
         }
 
         boolean isFirst = true;
@@ -59,7 +62,7 @@ public class ThetaCombineOperator {
 
         String newEdge = rootNode + '-' + newChildNode;
 
-        for (String key : keys) {
+        keys.parallelStream().forEach(key -> {
             if (evaluateTheta(theta, key, rootNode, allChildNodes)) {
                 GraphUtils.addValueToCollection(newEdge, key, GraphAdditionMethod.AS_SET);
                 if (hasOutput) {
@@ -75,7 +78,7 @@ public class ThetaCombineOperator {
                     GraphUtils.addValueToCollection(newEdge + ':' + key, key, GraphAdditionMethod.AS_SET);
                 }
             }
-        }
+        });
 
         Instant finish = Instant.now();
         long timeElapsed = Duration.between(start, finish).toMillis();

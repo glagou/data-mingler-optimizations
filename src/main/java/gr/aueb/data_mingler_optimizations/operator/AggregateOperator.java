@@ -27,12 +27,10 @@ public class AggregateOperator {
         return true;
     }
 
-    private static void calculateMin(String edge, Set<String> keys) {
-        for (String key : keys) {
+    private static void calculateMin(String graphKey) {
             String result;
-            String graphKey = edge + ":" + key;
             List<String> values = (List<String>) GraphUtils.getElements(graphKey);
-            if (values.size() != 0) {
+            if (!values.isEmpty()) {
                 GraphUtils.removeElement(graphKey);
                 if (isNumericList(values)) {
                     double min = Double.MAX_VALUE;
@@ -50,15 +48,12 @@ public class AggregateOperator {
             } else {
                 GraphUtils.addValueToCollection(graphKey, StringConstant.NULL.getValue(), GraphAdditionMethod.AS_LIST);
             }
-        }
     }
 
-    private static void calculateMax(String edge, Set<String> keys) {
-        for (String key : keys) {
+    private static void calculateMax(String graphKey) {
             String result;
-            String graphKey = edge + ":" + key;
             List<String> values = (List<String>) GraphUtils.getElements(graphKey);
-            if (values.size() != 0) {
+            if (!values.isEmpty()) {
                 GraphUtils.removeElement(graphKey);
                 if (isNumericList(values)) {
                     double max = Double.MIN_VALUE;
@@ -76,14 +71,10 @@ public class AggregateOperator {
             } else {
                 GraphUtils.addValueToCollection(graphKey, StringConstant.NULL.getValue(), GraphAdditionMethod.AS_LIST);
             }
-        }
     }
 
-    private static void calculateSum(String edge, Set<String> keys) {
-        for (String key : keys) {
-            String graphKey = edge + ":" + key;
+    private static void calculateSum(String graphKey) {
             List<String> values = (List<String>) GraphUtils.getElements(graphKey);
-
             if (!(values == null) && isNumericList(values)) {
                 double sum = 0;
                 for (String value : values) {
@@ -95,27 +86,12 @@ public class AggregateOperator {
             } else {
                 GraphUtils.addValueToCollection(graphKey, StringConstant.NULL.getValue(), GraphAdditionMethod.AS_LIST);
             }
-        }
     }
 
-
-
-    private static boolean isNumeric(String str) {
-        try {
-            Double.parseDouble(str);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
-
-
-    private static void calculateAverage(String edge, Set<String> keys) {
-        for (String key : keys) {
+    private static void calculateAverage(String graphKey) {
             String result;
-            String graphKey = edge + ":" + key;
             List<String> values = (List<String>) GraphUtils.getElements(graphKey);
-            if (values.size() != 0) {
+            if (!values.isEmpty()) {
                 GraphUtils.removeElement(graphKey);
                 boolean foundAtLeastOne = false;
                 double sum = 0;
@@ -138,44 +114,39 @@ public class AggregateOperator {
             } else {
                 GraphUtils.addValueToCollection(graphKey, StringConstant.NULL.getValue(), GraphAdditionMethod.AS_LIST);
             }
-        }
     }
 
-    private static void calculateCount(String edge, Set<String> keys) {
-        for (String key : keys) {
+    private static void calculateCount(String graphKey) {
             String result;
-            String graphKey = edge + ":" + key;
             long size = GraphUtils.getElements(graphKey).size();
             GraphUtils.removeElement(graphKey);
             result = String.valueOf(size);
             GraphUtils.addValueToCollection(graphKey, result, GraphAdditionMethod.AS_LIST);
-        }
     }
 
-    private static void calculateAny(String edge, Set<String> keys) {
-        for (String key : keys) {
-            String result;
-            String graphKey = edge + ":" + key;
-            List<String> values = (List<String>) GraphUtils.getElements(graphKey);
-            if (values.size() != 0) {
-                GraphUtils.removeElement(graphKey);
-                result = values.get(0);
-                GraphUtils.addValueToCollection(graphKey, result, GraphAdditionMethod.AS_LIST);
-            }
+    private static void calculateAny(String graphKey) {
+        String result;
+        List<String> values = (List<String>) GraphUtils.getElements(graphKey);
+        if (!values.isEmpty()) {
+            GraphUtils.removeElement(graphKey);
+            result = values.get(0);
+            GraphUtils.addValueToCollection(graphKey, result, GraphAdditionMethod.AS_LIST);
         }
     }
 
     public static void run(String rootNode, String childNode, AggregationType aggregationType) {
         String edge = rootNode + "-" + childNode;
         Set<String> keys = (Set<String>) GraphUtils.getElements(edge);
-        switch (aggregationType) {
-            case MIN -> calculateMin(edge, keys);
-            case MAX -> calculateMax(edge, keys);
-            case SUM -> calculateSum(edge, keys);
-            case AVERAGE -> calculateAverage(edge, keys);
-            case COUNT -> calculateCount(edge, keys);
-            case ANY -> calculateAny(edge, keys);
-        }
+        keys.parallelStream().forEach(key -> {
+            String graphKey = edge + ":" + key;
+            switch (aggregationType) {
+                case MIN -> calculateMin(graphKey);
+                case MAX -> calculateMax(graphKey);
+                case SUM -> calculateSum(graphKey);
+                case AVERAGE -> calculateAverage(graphKey);
+                case COUNT -> calculateCount(graphKey);
+                case ANY -> calculateAny(graphKey);
+            }
+        });
     }
-
 }

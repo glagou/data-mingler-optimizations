@@ -13,10 +13,11 @@ public class RollupOperator {
         String edge1 = rootNode + "-" + childNode;
         String edge2 = childNode + "-" + childOfChildNode;
         Set<String> keys = (Set<String>) GraphUtils.getElements(edge1);
-        for (String key : keys) {
+        keys.parallelStream().forEach(key -> {
             String graphKey = edge1 + ":" + key;
             List<String> values = (List<String>) GraphUtils.getElements(graphKey);
             GraphUtils.removeElement(graphKey);
+            if (values == null) return;
             for (String value : values) {
                 String graphKey2 = edge2 + ":" + value;
                 List<String> values2 = (List<String>) GraphUtils.getElements(graphKey2);
@@ -26,7 +27,7 @@ public class RollupOperator {
                     }
                 }
             }
-        }
+        });
     }
 
 }
