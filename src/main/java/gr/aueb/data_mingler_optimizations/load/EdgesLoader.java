@@ -34,6 +34,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.stream.Stream;
+
 import org.dhatim.fastexcel.reader.ReadableWorkbook;
 import org.dhatim.fastexcel.reader.Row;
 
@@ -46,9 +47,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import java.util.concurrent.ForkJoinPool;
-
 
 public class EdgesLoader {
 
@@ -120,8 +118,8 @@ public class EdgesLoader {
 
         queryString = queryString.replace("\"", "'");
         try (
-             PreparedStatement statement = connection.prepareStatement(queryString);
-             ResultSet resultSet = statement.executeQuery()) {
+                PreparedStatement statement = connection.prepareStatement(queryString);
+                ResultSet resultSet = statement.executeQuery()) {
 
             while (resultSet.next()) {
                 StringBuilder key = new StringBuilder();
@@ -181,10 +179,10 @@ public class EdgesLoader {
                     if (!value.isEmpty()) value.append(":");
                     value.append(resultSet.getString(num));
 
-                    GraphUtils.addValueToCollection(aliasa.get(num-2) + "-" + aliasb.get(num-2) + ":" + key, value.toString(),
+                    GraphUtils.addValueToCollection(aliasa.get(num - 2) + "-" + aliasb.get(num - 2) + ":" + key, value.toString(),
                             GraphAdditionMethod.AS_LIST);
 
-                    GraphUtils.addValueToCollection(aliasa.get(num-2) + "-" + aliasb.get(num-2), key.toString(), GraphAdditionMethod.AS_SET);
+                    GraphUtils.addValueToCollection(aliasa.get(num - 2) + "-" + aliasb.get(num - 2), key.toString(), GraphAdditionMethod.AS_SET);
                 }
 
 
@@ -195,7 +193,7 @@ public class EdgesLoader {
     }
 
 
-        private static void loadEdgesForCsv(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
+    private static void loadEdgesForCsv(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
                                         String aliasA, String aliasB) throws XPathExpressionException {
 
         String fileName = xpath.evaluate("/datasources/datasource[position()=" + rows + "]/filename",
@@ -275,30 +273,30 @@ public class EdgesLoader {
                     }
                     case XMLStreamConstants.END_ELEMENT -> {
                         //if (reader.getLocalName().equals("review")) {
-                            // Process the data here
-                            for (int j : keyPositions) {
-                                if (!keyBuilder.isEmpty()) {
-                                    keyBuilder.append(":");
-                                }
-                                keyBuilder.append(index);
+                        // Process the data here
+                        for (int j : keyPositions) {
+                            if (!keyBuilder.isEmpty()) {
+                                keyBuilder.append(":");
                             }
-
-                            for (int j : valuePositions) {
-                                if (!valueBuilder.isEmpty()) {
-                                    valueBuilder.append(":");
-                                }
-                                valueBuilder.append(reviewText);
-                            }
-
-                            String key = keyBuilder.toString();
-                            String value = valueBuilder.toString();
-
-                            String compositeKey = compositeKeyPrefix + key;
-                            GraphUtils.addValueToCollection(compositeKey, value, GraphAdditionMethod.AS_LIST);
-                            GraphUtils.addValueToCollection(aliasKey, key, GraphAdditionMethod.AS_SET);
+                            keyBuilder.append(index);
                         }
+
+                        for (int j : valuePositions) {
+                            if (!valueBuilder.isEmpty()) {
+                                valueBuilder.append(":");
+                            }
+                            valueBuilder.append(reviewText);
+                        }
+
+                        String key = keyBuilder.toString();
+                        String value = valueBuilder.toString();
+
+                        String compositeKey = compositeKeyPrefix + key;
+                        GraphUtils.addValueToCollection(compositeKey, value, GraphAdditionMethod.AS_LIST);
+                        GraphUtils.addValueToCollection(aliasKey, key, GraphAdditionMethod.AS_SET);
                     }
                 }
+            }
             //}
 
             reader.close();
@@ -306,9 +304,6 @@ public class EdgesLoader {
             throw new RuntimeException("Error processing XML file", e);
         }
     }
-
-
-
 
 
     private static void loadEdgesForExcel(int rows, List<Integer> keyPositions, List<Integer> valuePositions,
@@ -427,87 +422,80 @@ public class EdgesLoader {
         AtomicInteger k = new AtomicInteger();
         List<String> aliasa = new ArrayList<>();
         List<String> aliasb = new ArrayList<>();
-        ForkJoinPool forkJoinPool = new ForkJoinPool(); // Create a ForkJoinPool
 
         try (Session session = neo4jDriver.session()) {
             String query = "MATCH (a:attribute{name:$nodeA})-[r:has]->(b:attribute{name:$nodeB}) " +
                     "RETURN r.datasource as datasource, r.query as query, r.key as key, r.value as value";
 
-            forkJoinPool.submit(() ->
-                    IntStream.iterate(0, i -> i < args.length, i -> i + 4)
-                            .parallel() // Enable parallel processing
-                            .forEach(i -> {
-                                String nodeA = args[i];
-                                String nodeB = args[i + 1];
-                                String aliasA = args[i + 2].isEmpty() ? nodeA : args[i + 2];
-                                String aliasB = args[i + 3].isEmpty() ? nodeB : args[i + 3];
+            IntStream.iterate(0, i -> i < args.length, i -> i + 4)
+                    .forEach(i -> {
+                        String nodeA = args[i];
+                        String nodeB = args[i + 1];
+                        String aliasA = args[i + 2].isEmpty() ? nodeA : args[i + 2];
+                        String aliasB = args[i + 3].isEmpty() ? nodeB : args[i + 3];
 
-                                try {
-                                    Result result = session.run(query, parameters("nodeA", nodeA, "nodeB", nodeB));
+                        try {
+                            Result result = session.run(query, parameters("nodeA", nodeA, "nodeB", nodeB));
 
-                                    while (result.hasNext()) {
-                                        Record record = result.next();
-                                        String datasource = record.get("datasource").asString();
-                                        String queryString = record.get("query").asString();
-                                        String[] keyPosStr = record.get("key").asString().split(",", -1);
-                                        String[] valuePosStr = record.get("value").asString().split(",", -1);
+                            while (result.hasNext()) {
+                                Record record = result.next();
+                                String datasource = record.get("datasource").asString();
+                                String queryString = record.get("query").asString();
+                                String[] keyPosStr = record.get("key").asString().split(",", -1);
+                                 String[] valuePosStr = record.get("value").asString().split(",", -1);
 
-                                        List<Integer> keyPositions = new ArrayList<>();
-                                        List<Integer> valuePositions = new ArrayList<>();
+                                List<Integer> keyPositions = new ArrayList<>();
+                                List<Integer> valuePositions = new ArrayList<>();
 
-                                        for (String s : keyPosStr) {
-                                            keyPositions.add(Integer.parseInt(s));
-                                        }
-                                        for (String s : valuePosStr) {
-                                            valuePositions.add(Integer.parseInt(s));
-                                        }
-
-                                        int rows = validateDatasourceExists(datasource, nodeA, nodeB);
-                                        DatasourceType datasourceType = findDatasourceType(rows);
-
-                                        if (datasourceType == DatasourceType.DB) {
-
-                                             if (connection == null) {
-                                                      try {   Class.forName("org.postgresql.Driver");
-						} catch (ClassNotFoundException e) {
-							System.out.println(e.getMessage());}
-                                                    String connString = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/connection").trim();
-                                                    String username = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/username").trim();
-                                                    String password = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/password").trim();
-                                                    String database = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/database").trim();
-                                                    String url = "jdbc:postgresql://" + connString + "/" + database;
-                                                    connection = DriverManager.getConnection(url, username, password);
-                                                }
-                                            loadEdgesForDatabase(rows, keyPositions, valuePositions, queryString, aliasA, aliasB, connection);
-                                            //loadEdgesForDatabase(rows, keyPositions, valuePositions, queryString, aliasA, aliasB, connection);
-
-                                        } else if (datasourceType == DatasourceType.CSV) {
-                                            loadEdgesForCsv(rows, keyPositions, valuePositions, aliasA, aliasB);
-                                        } else if (datasourceType == DatasourceType.EXCEL) {
-                                            loadEdgesForExcel(rows, keyPositions, valuePositions, aliasA, aliasB);
-                                        } else if (datasourceType == DatasourceType.XML) {
-                                            loadEdgesForXML(rows, keyPositions, valuePositions, nodeA, nodeB, aliasA, aliasB);
-                                        } else {
-                                            loadEdgesForProcess(rows, keyPositions, valuePositions, aliasA, aliasB);
-                                        }
-
-                                        keyPositions.clear();
-                                        valuePositions.clear();
-                                    }
-                                } catch (XPathExpressionException | SQLException e) {
-                                    throw new RuntimeException(e);
+                                for (String s : keyPosStr) {
+                                    keyPositions.add(Integer.parseInt(s));
                                 }
-                            })
-            ).get(); // Wait for all tasks to complete
+                                for (String s : valuePosStr) {
+                                    valuePositions.add(Integer.parseInt(s));
+                                }
+
+                                int rows = validateDatasourceExists(datasource, nodeA, nodeB);
+                                DatasourceType datasourceType = findDatasourceType(rows);
+
+                                if (datasourceType == DatasourceType.DB) {
+
+                                    if (connection == null) {
+                                        try {
+                                            Class.forName("org.postgresql.Driver");
+                                        } catch (ClassNotFoundException e) {
+                                            System.out.println(e.getMessage());
+                                        }
+                                        String connString = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/connection").trim();
+                                        String username = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/username").trim();
+                                        String password = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/password").trim();
+                                        String database = getSingleNodeValue(document, "/datasources/datasource[position()=" + rows + "]/database").trim();
+                                        String url = "jdbc:postgresql://" + connString + "/" + database;
+                                        connection = DriverManager.getConnection(url, username, password);
+                                    }
+                                    loadEdgesForDatabase(rows, keyPositions, valuePositions, queryString, aliasA, aliasB, connection);
+                                    //loadEdgesForDatabase(rows, keyPositions, valuePositions, queryString, aliasA, aliasB, connection);
+
+                                } else if (datasourceType == DatasourceType.CSV) {
+                                    loadEdgesForCsv(rows, keyPositions, valuePositions, aliasA, aliasB);
+                                } else if (datasourceType == DatasourceType.EXCEL) {
+                                    loadEdgesForExcel(rows, keyPositions, valuePositions, aliasA, aliasB);
+                                } else if (datasourceType == DatasourceType.XML) {
+                                    loadEdgesForXML(rows, keyPositions, valuePositions, nodeA, nodeB, aliasA, aliasB);
+                                } else {
+                                    loadEdgesForProcess(rows, keyPositions, valuePositions, aliasA, aliasB);
+                                }
+
+                                keyPositions.clear();
+                                valuePositions.clear();
+                            }
+                        } catch (XPathExpressionException | SQLException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
         } catch (Exception e) {
             throw new RuntimeException(e);
-        } finally {
-            forkJoinPool.shutdown(); // Shut down the ForkJoinPool
         }
     }
-
-
-
 
 
     public static void main(String[] args) {
