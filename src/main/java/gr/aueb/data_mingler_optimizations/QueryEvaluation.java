@@ -227,7 +227,7 @@ public class QueryEvaluation {
 
             // Create a parallel stream to evaluate and transform child nodes concurrently
             forkJoinPool.submit(() -> {
-                branchRootNodes.forEach(branchRootNode -> {
+                branchRootNodes.parallelStream().forEach(branchRootNode -> {
                     System.out.println("Thread " + Thread.currentThread().getId() + " working on node: " + branchRootNode);
                     evaluateChild(rootNode, branchRootNode);
                     System.out.println(" - Finished evaluating child: " + branchRootNode);
