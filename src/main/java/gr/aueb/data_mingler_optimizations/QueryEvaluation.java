@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ForkJoinPool;
 
 
 /**
@@ -221,15 +222,25 @@ public class QueryEvaluation {
     }
 
     private static void evaluateChildAndExecuteTransformations() {
-        // Create a parallel stream to evaluate and transform child nodes concurrently
-        branchRootNodes
-            .parallelStream()
-            .forEach(branchRootNode -> {
-                evaluateChild(rootNode, branchRootNode);
-                System.out.println("Finished evaluating child: " + branchRootNode);
-                OperatorUtils.executeTransformationOnEdge(rootNode, branchRootNode);
-                System.out.println("Finished transforming child: " + branchRootNode);
-            });
+        ForkJoinPool forkJoinPool = new ForkJoinPool();
+        try {
+
+            // Create a parallel stream to evaluate and transform child nodes concurrently
+            forkJoinPool.submit(() -> {
+                branchRootNodes.forEach(branchRootNode -> {
+                    System.out.println("Thread " + Thread.currentThread().getId() + " working on node: " + branchRootNode);
+                    evaluateChild(rootNode, branchRootNode);
+                    System.out.println(" - Finished evaluating child: " + branchRootNode);
+                    OperatorUtils.executeTransformationOnEdge(rootNode, branchRootNode);
+                    System.out.println(" - Finished transforming child: " + branchRootNode);
+                    System.out.println("Thread " + Thread.currentThread().getId() + " finished working on node: " + branchRootNode);
+                });
+            }).join();
+        } catch (Exception e) {
+            throw new RuntimeException("Operations on branches encountered error: " + e);
+        } finally {
+            forkJoinPool.shutdown();
+        }
     }
 
 
